@@ -52,7 +52,7 @@ export class TrackdexSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Basemap tile URL")
 			.setDesc(
-				"Raster tile template with {z}, {x}, {y} (default: Wikimedia OSM). " +
+				"Raster tile template with {z}, {x}, {y} (default: OpenStreetMap). " +
 				"MapLibre/OpenFreeMap style URLs are not supported in Obsidian.",
 			)
 			.addText(text => text

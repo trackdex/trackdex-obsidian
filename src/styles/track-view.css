@@ -63,6 +63,11 @@
 	color: var(--text-error);
 	font-size: var(--font-ui-small);
 	text-align: center;
+	pointer-events: none;
+}
+
+.trackdex-track-stub__map-error--blocking {
+	pointer-events: auto;
 }
 
 .trackdex-track-stub__attribution {

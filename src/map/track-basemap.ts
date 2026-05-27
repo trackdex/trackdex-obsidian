@@ -21,6 +21,10 @@ export function normalizeBasemapTileUrl(url: string | undefined): string {
 	if (trimmed.includes("/styles/") || !trimmed.includes("{z}")) {
 		return DEFAULT_BASEMAP_TILE_URL;
 	}
+	// Wikimedia blocks non-WM referrers (HTTP 403); migrate saved URLs.
+	if (trimmed.includes("maps.wikimedia.org")) {
+		return DEFAULT_BASEMAP_TILE_URL;
+	}
 	return trimmed;
 }
 
@@ -49,7 +53,7 @@ export function createTrackBasemap(
 	const tileLayer = L.tileLayer(normalizeBasemapTileUrl(tileUrl), {
 		attribution: DEFAULT_BASEMAP_ATTRIBUTION,
 		maxZoom: 19,
-		updateWhenIdle: true,
+		keepBuffer: 4,
 	});
 
 	tileLayer.addTo(map);
@@ -93,6 +97,36 @@ export function resizeTrackBasemap(basemap: TrackBasemap | null): void {
 			return;
 		}
 		basemap.map.invalidateSize({animate: false});
+	} catch {
+		// Map may be removed during unload.
+	}
+}
+
+/**
+ * Recalculate map layout. Optionally redraw tiles when the pane was hidden.
+ * Avoid redraw during zoom — it aborts in-flight tile loads (stale tiles stay visible).
+ */
+export function refreshTrackBasemap(
+	basemap: TrackBasemap | null,
+	options?: {redraw?: boolean},
+): void {
+	if (!basemap) {
+		return;
+	}
+	resizeTrackBasemap(basemap);
+	if (options?.redraw !== true) {
+		return;
+	}
+	try {
+		const mapContainer = basemap.map.getContainer();
+		if (!mapContainer.isConnected) {
+			return;
+		}
+		const {width, height} = mapContainer.getBoundingClientRect();
+		if (width < 1 || height < 1) {
+			return;
+		}
+		basemap.tileLayer.redraw();
 	} catch {
 		// Map may be removed during unload.
 	}
