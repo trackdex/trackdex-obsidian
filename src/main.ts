@@ -1,10 +1,10 @@
 import {App, Editor, MarkdownView, Modal, Notice, Plugin} from 'obsidian';
-import {DEFAULT_SETTINGS, migrateSettings, MyPluginSettings, TrackdexSettingTab} from "./settings";
+import {migrateSettings, TrackdexSettings, TrackdexSettingTab} from "./settings";
 import {preserveSettingsFocus} from "./utils/preserve-settings-focus";
 import {registerTrackView} from "./views/register-track-view";
 
-export default class MyPlugin extends Plugin {
-	settings: MyPluginSettings;
+export default class TrackdexPlugin extends Plugin {
+	settings: TrackdexSettings;
 
 	async onload() {
 		await this.loadSettings();
@@ -20,7 +20,7 @@ export default class MyPlugin extends Plugin {
 
 		this.addCommand({
 			id: "open-trackdex-overview",
-			name: "Open Trackdex overview",
+			name: "Open overview",
 			callback: () => {
 				new TrackdexModal(this.app).open();
 			}
@@ -28,7 +28,7 @@ export default class MyPlugin extends Plugin {
 
 		this.addCommand({
 			id: "insert-trackdex-tag",
-			name: "Insert Trackdex marker",
+			name: "Insert marker",
 			editorCallback: (editor: Editor, _view: MarkdownView) => {
 				editor.replaceSelection("#trackdex");
 			}
@@ -60,7 +60,7 @@ export default class MyPlugin extends Plugin {
 
 	async loadSettings() {
 		this.settings = migrateSettings(
-			await this.loadData() as Partial<MyPluginSettings> | null,
+			await this.loadData() as Partial<TrackdexSettings> | null,
 		);
 	}
 

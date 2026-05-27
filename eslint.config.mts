@@ -25,10 +25,28 @@ export default tseslint.config(
 	globalIgnores([
 		"node_modules",
 		"dist",
-		"esbuild.config.mjs",
+		"scripts/build.mjs",
+		"scripts/deploy.mjs",
 		"eslint.config.js",
-		"version-bump.mjs",
+		"scripts/version-bump.mjs",
 		"versions.json",
 		"main.js",
+		"trackdex-dev-vault/**",
 	]),
+	{
+		files: ["**/*.ts", "**/*.tsx"],
+		plugins: {
+			obsidianmd,
+		},
+		rules: {
+			"obsidianmd/ui/sentence-case": [
+				"error",
+				{
+					acronyms: ["GPX", "URL"],
+					brands: ["Trackdex"],
+					allowAutoFix: true,
+				},
+			],
+		},
+	},
 );

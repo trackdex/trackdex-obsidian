@@ -1,23 +1,23 @@
 import {App, PluginSettingTab, Setting} from "obsidian";
 import {DEFAULT_BASEMAP_TILE_URL} from "./constants";
 import {normalizeBasemapTileUrl} from "./map/track-basemap";
-import MyPlugin from "./main";
+import TrackdexPlugin from "./main";
 
-export interface MyPluginSettings {
+export interface TrackdexSettings {
 	tracksFolder: string;
 	/** Legacy key; migrated to basemapTileUrl on load. */
 	basemapStyleUrl?: string;
 	basemapTileUrl: string;
 }
 
-export const DEFAULT_SETTINGS: MyPluginSettings = {
+export const DEFAULT_SETTINGS: TrackdexSettings = {
 	tracksFolder: "tracks",
 	basemapTileUrl: DEFAULT_BASEMAP_TILE_URL,
 };
 
 export function migrateSettings(
-	raw: Partial<MyPluginSettings> | null,
-): MyPluginSettings {
+	raw: Partial<TrackdexSettings> | null,
+): TrackdexSettings {
 	const merged = Object.assign({}, DEFAULT_SETTINGS, raw);
 	merged.basemapTileUrl = normalizeBasemapTileUrl(
 		raw?.basemapTileUrl ?? raw?.basemapStyleUrl,
@@ -26,9 +26,9 @@ export function migrateSettings(
 }
 
 export class TrackdexSettingTab extends PluginSettingTab {
-	plugin: MyPlugin;
+	plugin: TrackdexPlugin;
 
-	constructor(app: App, plugin: MyPlugin) {
+	constructor(app: App, plugin: TrackdexPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
@@ -42,7 +42,7 @@ export class TrackdexSettingTab extends PluginSettingTab {
 			.setName("Tracks folder")
 			.setDesc("Folder with GPX files inside your vault")
 			.addText(text => text
-				.setPlaceholder("tracks")
+				.setPlaceholder(DEFAULT_SETTINGS.tracksFolder)
 				.setValue(this.plugin.settings.tracksFolder)
 				.onChange(async (value) => {
 					this.plugin.settings.tracksFolder = value.trim() || "tracks";

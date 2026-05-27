@@ -12,6 +12,11 @@ export interface TrackBasemap {
 	tileLayer: TileLayer;
 }
 
+export interface TrackMapViewState {
+	mapCenter: {lat: number; lng: number};
+	mapZoom: number;
+}
+
 export function normalizeBasemapTileUrl(url: string | undefined): string {
 	const trimmed = url?.trim() ?? "";
 	if (!trimmed) {
@@ -39,13 +44,18 @@ export function createTrackBasemap(
 	container: HTMLElement,
 	tileUrl: string = DEFAULT_BASEMAP_TILE_URL,
 	extraScrollTargets: HTMLElement[] = [],
+	initialView?: TrackMapViewState,
 ): TrackBasemap {
+	const center: L.LatLngExpression = initialView
+		? [initialView.mapCenter.lat, initialView.mapCenter.lng]
+		: DEFAULT_CENTER;
+	const zoom = initialView?.mapZoom ?? DEFAULT_ZOOM;
+
 	const map = L.map(container, {
-		center: DEFAULT_CENTER,
-		zoom: DEFAULT_ZOOM,
+		center,
+		zoom,
 		zoomControl: false,
-		// Wheel over the map must not fight Obsidian workspace / view scroll.
-		scrollWheelZoom: false,
+		scrollWheelZoom: true,
 	});
 
 	disableLeafletEventBubble(container, ...extraScrollTargets);
@@ -81,6 +91,14 @@ export function destroyTrackBasemap(basemap: TrackBasemap | null): void {
 	} catch {
 		// View or plugin may already be tearing down.
 	}
+}
+
+export function getTrackMapViewState(basemap: TrackBasemap): TrackMapViewState {
+	const center = basemap.map.getCenter();
+	return {
+		mapCenter: {lat: center.lat, lng: center.lng},
+		mapZoom: basemap.map.getZoom(),
+	};
 }
 
 export function resizeTrackBasemap(basemap: TrackBasemap | null): void {

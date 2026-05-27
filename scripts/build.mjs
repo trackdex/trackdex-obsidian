@@ -1,11 +1,11 @@
 import esbuild from "esbuild";
 import process from "process";
-import {builtinModules} from "node:module";
-import {readFileSync, writeFileSync} from "node:fs";
-import {dirname, join} from "node:path";
-import {fileURLToPath} from "node:url";
+import { builtinModules } from "node:module";
+import { readFileSync, writeFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 const banner =
 `/*
@@ -18,15 +18,15 @@ const prod = (process.argv[2] === "production");
 
 function writeStylesCss() {
 	const leafletCss = readFileSync(
-		join(__dirname, "node_modules/leaflet/dist/leaflet.css"),
+		join(ROOT, "node_modules/leaflet/dist/leaflet.css"),
 		"utf8",
 	);
 	const trackCss = readFileSync(
-		join(__dirname, "src/styles/track-view.css"),
+		join(ROOT, "src/styles/track-view.css"),
 		"utf8",
 	);
 	writeFileSync(
-		join(__dirname, "styles.css"),
+		join(ROOT, "styles.css"),
 		`${leafletCss}\n${trackCss}`,
 		"utf8",
 	);
@@ -36,7 +36,7 @@ const context = await esbuild.context({
 	banner: {
 		js: banner,
 	},
-	entryPoints: ["src/main.ts"],
+	entryPoints: [join(ROOT, "src/main.ts")],
 	bundle: true,
 	external: [
 		"obsidian",
@@ -58,7 +58,7 @@ const context = await esbuild.context({
 	logLevel: "info",
 	sourcemap: prod ? false : "inline",
 	treeShaking: true,
-	outfile: "main.js",
+	outfile: join(ROOT, "main.js"),
 	minify: prod,
 	plugins: [
 		{

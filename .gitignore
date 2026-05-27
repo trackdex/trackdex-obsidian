@@ -7,9 +7,6 @@ main.js
 styles.css
 *.map
 
-# Legacy / experimental bundles (not part of current Leaflet build)
-maplibre-gl-csp-worker.js
-
 # --- Obsidian plugin runtime (in a vault, not this repo) ---
 data.json
 

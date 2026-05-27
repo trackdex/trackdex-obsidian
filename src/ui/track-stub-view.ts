@@ -3,11 +3,17 @@ import {DEFAULT_BASEMAP_TILE_URL, TRACKDEX_TRACK_VIEW_TYPE} from "../constants";
 import {
 	createTrackBasemap,
 	destroyTrackBasemap,
+	getTrackMapViewState,
 	refreshTrackBasemap,
 	resizeTrackBasemap,
 	type TrackBasemap,
+	type TrackMapViewState,
 } from "../map/track-basemap";
-import type MyPlugin from "../main";
+import type TrackdexPlugin from "../main";
+import {
+	refreshViewNavButtons,
+	syncViewHeaderTitle,
+} from "../utils/file-view-nav";
 import {preserveSettingsFocus} from "../utils/preserve-settings-focus";
 
 export class TrackStubView extends TextFileView {
@@ -22,8 +28,9 @@ export class TrackStubView extends TextFileView {
 	private closing: Promise<void> | null = null;
 	private mapVisibilityObserver: IntersectionObserver | null = null;
 	private mapWasVisible = false;
-	private headerEl: HTMLElement | null = null;
-	private pathEl: HTMLElement | null = null;
+	private pendingMapView: TrackMapViewState | null = null;
+	private renderedFilePath: string | null = null;
+	private restoredMapViewFromHistory = false;
 	private readonly onWindowResize = debounce(
 		() => {
 			if (this.isClosing || !this.basemap) {
@@ -53,9 +60,10 @@ export class TrackStubView extends TextFileView {
 
 	constructor(
 		leaf: WorkspaceLeaf,
-		private readonly plugin: MyPlugin,
+		private readonly plugin: TrackdexPlugin,
 	) {
 		super(leaf);
+		this.navigation = true;
 	}
 
 	getViewType(): string {
@@ -70,30 +78,46 @@ export class TrackStubView extends TextFileView {
 		return this.data;
 	}
 
-	setViewData(data: string, _clear: boolean): void {
+	setViewData(data: string, clear: boolean): void {
 		this.data = data;
-		if (this.basemap && this.mapContainerEl?.isConnected) {
-			this.updateTrackLabels();
+		if (clear) {
+			this.clear();
+		}
+		const filePath = this.file?.path ?? null;
+		const isSameFileRender =
+			filePath !== null &&
+			filePath === this.renderedFilePath &&
+			this.basemap &&
+			this.mapContainerEl?.isConnected;
+		if (!clear && isSameFileRender) {
 			return;
 		}
+		this.isClosing = false;
 		this.renderView();
 	}
 
 	clear(): void {
-		this.isClosing = true;
+		// Reset editor state for a new file — not the same as closing the view tab.
 		this.onWindowResize.cancel();
 		this.onMapRefresh.cancel();
 		this.teardownMap();
-		this.containerEl.empty();
+		this.renderedFilePath = null;
+		this.pendingMapView = null;
+		this.restoredMapViewFromHistory = false;
+		this.contentEl.empty();
 	}
 
 	async onOpen(): Promise<void> {
+		await super.onOpen();
+		syncViewHeaderTitle(this);
+		refreshViewNavButtons(this);
+
 		this.isClosing = false;
 		this.closing = null;
 		this.registerDomEvent(window, "resize", this.onWindowResize);
 		this.registerEvent(
 			this.app.workspace.on("resize", () => {
-				if (this.leaf === this.app.workspace.activeLeaf) {
+				if (this.app.workspace.getActiveViewOfType(TrackStubView) === this) {
 					this.scheduleMapRefresh(false);
 				}
 			}),
@@ -101,6 +125,7 @@ export class TrackStubView extends TextFileView {
 		this.registerEvent(
 			this.app.workspace.on("layout-change", () => {
 				this.scheduleMapRefresh(false);
+				refreshViewNavButtons(this);
 			}),
 		);
 		this.registerEvent(
@@ -108,8 +133,14 @@ export class TrackStubView extends TextFileView {
 				if (leaf === this.leaf) {
 					void this.leaf.loadIfDeferred().then(() => {
 						this.scheduleMapRefresh(true);
+						refreshViewNavButtons(this);
 					});
 				}
+			}),
+		);
+		this.registerEvent(
+			this.app.workspace.on("file-open", () => {
+				refreshViewNavButtons(this);
 			}),
 		);
 	}
@@ -131,35 +162,113 @@ export class TrackStubView extends TextFileView {
 		await super.onClose();
 	}
 
+	async onLoadFile(file: TFile): Promise<void> {
+		await super.onLoadFile(file);
+		syncViewHeaderTitle(this);
+		refreshViewNavButtons(this);
+	}
+
 	async onUnloadFile(_file: TFile): Promise<void> {
-		this.isClosing = true;
 		this.onWindowResize.cancel();
 		this.onMapRefresh.cancel();
 		this.teardownMap();
+		this.renderedFilePath = null;
 	}
 
 	async save(_clear?: boolean): Promise<void> {
 		// Read-only GPX preview; never write file contents back.
 	}
 
+	getEphemeralState(): Record<string, unknown> {
+		const state = super.getEphemeralState();
+		const mapView = this.getCurrentMapViewState();
+		if (mapView) {
+			state.mapCenter = mapView.mapCenter;
+			state.mapZoom = mapView.mapZoom;
+		}
+		return state;
+	}
+
+	setEphemeralState(state: unknown): void {
+		super.setEphemeralState(state);
+		const mapState = this.readMapViewState(state);
+		this.pendingMapView = mapState;
+		this.restoredMapViewFromHistory = mapState !== null;
+		if (this.basemap && mapState) {
+			this.applyMapViewState(mapState);
+		}
+	}
+
+	private getCurrentMapViewState(): TrackMapViewState | null {
+		if (this.basemap) {
+			return getTrackMapViewState(this.basemap);
+		}
+		if (this.pendingMapView) {
+			return this.pendingMapView;
+		}
+		return this.readMapViewState(this.leaf.getEphemeralState());
+	}
+
+	private readMapViewState(state: unknown): TrackMapViewState | null {
+		if (!state || typeof state !== "object") {
+			return null;
+		}
+		const record = state as Record<string, unknown>;
+		const center = record.mapCenter;
+		const zoom = record.mapZoom;
+		if (
+			!center ||
+			typeof center !== "object" ||
+			typeof (center as {lat?: unknown}).lat !== "number" ||
+			typeof (center as {lng?: unknown}).lng !== "number" ||
+			typeof zoom !== "number"
+		) {
+			return null;
+		}
+		return {
+			mapCenter: {
+				lat: (center as {lat: number}).lat,
+				lng: (center as {lng: number}).lng,
+			},
+			mapZoom: zoom,
+		};
+	}
+
+	private applyMapViewState(state: TrackMapViewState): void {
+		if (!this.basemap) {
+			return;
+		}
+		this.basemap.map.setView(
+			[state.mapCenter.lat, state.mapCenter.lng],
+			state.mapZoom,
+			{animate: false},
+		);
+	}
+
+	private syncPendingMapViewForFile(): void {
+		const filePath = this.file?.path ?? null;
+		if (filePath === null || filePath === this.renderedFilePath) {
+			return;
+		}
+		if (!this.restoredMapViewFromHistory) {
+			// Forward navigation to a new track — default map, not the previous track.
+			this.pendingMapView = null;
+		}
+		this.restoredMapViewFromHistory = false;
+	}
+
 	private renderView(): void {
 		if (this.isClosing) {
 			return;
 		}
+		this.syncPendingMapViewForFile();
 		this.teardownMap();
 
-		const el = this.containerEl;
+		this.renderedFilePath = this.file?.path ?? null;
+
+		const el = this.contentEl;
 		el.empty();
 		el.addClass("trackdex-track-stub");
-		this.headerEl = el.createEl("h2", {text: this.file?.name ?? "GPX track"});
-		if (this.file?.path) {
-			this.pathEl = el.createEl("p", {
-				cls: "trackdex-track-stub__path",
-				text: this.file.path,
-			});
-		} else {
-			this.pathEl = null;
-		}
 
 		const mapWrap = el.createDiv({cls: "trackdex-track-stub__map-wrap"});
 		this.mapWrapEl = mapWrap;
@@ -207,6 +316,7 @@ export class TrackStubView extends TextFileView {
 				mapContainer,
 				tileUrl,
 				scrollTargets,
+				this.pendingMapView ?? undefined,
 			);
 			this.basemap.tileLayer.on("tileerror", () => {
 				if (this.isClosing || !this.basemap) {
@@ -216,7 +326,7 @@ export class TrackStubView extends TextFileView {
 				if (!this.tileErrorNoticeShown && this.tileErrorCount >= 5) {
 					this.tileErrorNoticeShown = true;
 					new Notice(
-						"Some map tiles failed to load. Check your network or basemap URL in Trackdex settings.",
+						"Some map tiles failed to load. Check your network or basemap URL in settings.",
 					);
 				}
 			});
@@ -227,6 +337,7 @@ export class TrackStubView extends TextFileView {
 				this.mapErrorEl?.hide();
 				this.scheduleMapResize();
 				this.scheduleMapRefresh(false);
+				refreshViewNavButtons(this);
 			});
 			this.attachMapVisibilityObserver(mapContainer);
 		} catch (error) {
@@ -256,20 +367,6 @@ export class TrackStubView extends TextFileView {
 		this.mapErrorEl.setText(message);
 		this.mapErrorEl.addClass("trackdex-track-stub__map-error--blocking");
 		this.mapErrorEl.show();
-	}
-
-	private updateTrackLabels(): void {
-		if (this.headerEl) {
-			this.headerEl.setText(this.file?.name ?? "GPX track");
-		}
-		if (this.pathEl) {
-			if (this.file?.path) {
-				this.pathEl.setText(this.file.path);
-				this.pathEl.show();
-			} else {
-				this.pathEl.hide();
-			}
-		}
 	}
 
 	private attachMapVisibilityObserver(mapContainer: HTMLElement): void {
@@ -310,8 +407,5 @@ export class TrackStubView extends TextFileView {
 		this.mapContainerEl = null;
 		this.mapWrapEl = null;
 		this.mapErrorEl = null;
-		this.headerEl = null;
-		this.pathEl = null;
 	}
 }
-
