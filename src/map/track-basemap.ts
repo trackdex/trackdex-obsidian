@@ -1,0 +1,99 @@
+import L, {type Map as LeafletMap, type TileLayer} from "leaflet";
+import {
+	DEFAULT_BASEMAP_ATTRIBUTION,
+	DEFAULT_BASEMAP_TILE_URL,
+} from "../constants";
+
+const DEFAULT_CENTER: L.LatLngExpression = [50, 10];
+const DEFAULT_ZOOM = 4;
+
+export interface TrackBasemap {
+	map: LeafletMap;
+	tileLayer: TileLayer;
+}
+
+export function normalizeBasemapTileUrl(url: string | undefined): string {
+	const trimmed = url?.trim() ?? "";
+	if (!trimmed) {
+		return DEFAULT_BASEMAP_TILE_URL;
+	}
+	// MapLibre style URLs from earlier builds cannot be used as raster templates.
+	if (trimmed.includes("/styles/") || !trimmed.includes("{z}")) {
+		return DEFAULT_BASEMAP_TILE_URL;
+	}
+	return trimmed;
+}
+
+function disableLeafletEventBubble(...elements: HTMLElement[]): void {
+	for (const el of elements) {
+		L.DomEvent.disableScrollPropagation(el);
+		L.DomEvent.disableClickPropagation(el);
+	}
+}
+
+export function createTrackBasemap(
+	container: HTMLElement,
+	tileUrl: string = DEFAULT_BASEMAP_TILE_URL,
+	extraScrollTargets: HTMLElement[] = [],
+): TrackBasemap {
+	const map = L.map(container, {
+		center: DEFAULT_CENTER,
+		zoom: DEFAULT_ZOOM,
+		zoomControl: false,
+		// Wheel over the map must not fight Obsidian workspace / view scroll.
+		scrollWheelZoom: false,
+	});
+
+	disableLeafletEventBubble(container, ...extraScrollTargets);
+
+	const tileLayer = L.tileLayer(normalizeBasemapTileUrl(tileUrl), {
+		attribution: DEFAULT_BASEMAP_ATTRIBUTION,
+		maxZoom: 19,
+		updateWhenIdle: true,
+	});
+
+	tileLayer.addTo(map);
+	L.control.zoom({position: "topright"}).addTo(map);
+
+	return {map, tileLayer};
+}
+
+export function destroyTrackBasemap(basemap: TrackBasemap | null): void {
+	if (!basemap) {
+		return;
+	}
+	const {map, tileLayer} = basemap;
+	try {
+		tileLayer.off();
+		map.off();
+		map.stop();
+		map.eachLayer((layer) => {
+			map.removeLayer(layer);
+		});
+		// Do not call map.remove(): it deletes nodes inside the view container and can
+		// disrupt Obsidian workspace layout (e.g. closing Settings while a map tab was open).
+		const container = map.getContainer() as HTMLElement & {_leaflet_id?: number};
+		delete container._leaflet_id;
+	} catch {
+		// View or plugin may already be tearing down.
+	}
+}
+
+export function resizeTrackBasemap(basemap: TrackBasemap | null): void {
+	if (!basemap) {
+		return;
+	}
+	try {
+		const mapContainer = basemap.map.getContainer();
+		if (!mapContainer.isConnected) {
+			return;
+		}
+		const {width, height} = mapContainer.getBoundingClientRect();
+		if (width < 1 || height < 1) {
+			return;
+		}
+		basemap.map.invalidateSize({animate: false});
+	} catch {
+		// Map may be removed during unload.
+	}
+}
