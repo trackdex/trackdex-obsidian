@@ -1,28 +1,30 @@
-name: Node.js build
+name: CI checks
 
 on:
-    push:
-        branches: ["**"]
     pull_request:
-        branches: ["**"]
+        types: [opened, synchronize, reopened, ready_for_review]
+        branches: [main]
+    push:
+        branches: [main]
+    workflow_dispatch:
 
 jobs:
-    build:
+    quality:
         runs-on: ubuntu-latest
-
-        strategy:
-            matrix:
-                node-version: [20.x, 22.x]
-                # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
         steps:
             - uses: actions/checkout@v4
-            - name: Use Node.js ${{ matrix.node-version }}
+            - name: Use Node.js 22.x
               uses: actions/setup-node@v4
               with:
-                  node-version: ${{ matrix.node-version }}
+                  node-version: "22.x"
                   cache: "npm"
-            - run: npm ci
-            - run: npm run build --if-present
-            - run: npm run lint
+            - name: Install dependencies
+              run: npm ci
+            - name: Lint
+              run: npm run lint
+            - name: Test
+              run: npm run test
+            - name: Build
+              run: npm run build
 
