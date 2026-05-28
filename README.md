@@ -21,7 +21,7 @@ Build for release: `npm run build`. Deploy to the local dev vault: `npm run depl
 - `npm run build` - production-сборка: проверка TypeScript (`tsc` без emit), затем build-скрипт.
 - `npm run test` - запуск базового smoke-теста через встроенный Node test runner.
 - `npm run deploy` - деплой через `scripts/deploy.mjs`.
-- `npm run deploy:dev` - деплой в dev-режиме (`scripts/deploy.mjs dev`).
+- `npm run deploy:dev` - деплой в dev-хранилище (`trackdex-dev-vault`).
 - `npm run version` - bump версии через `scripts/version-bump.mjs` + `git add manifest.json versions.json`.
 - `npm run lint` - запуск ESLint по проекту.
 
