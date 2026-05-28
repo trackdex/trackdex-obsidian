@@ -5,42 +5,59 @@
 - Milestones are incremental and reviewable.
 - Each milestone ends with a usable technical result and clear acceptance checks.
 - Business logic is implemented behind abstractions first, concrete adapters second.
-- Scope aligns with `docs/TECHNICAL_DESIGN.md` and MVP requirements.
+- Scope aligns with `docs/REQUIREMENTS.md`, `docs/PRODUCT_SPEC_V1.md`, and `docs/TECHNICAL_DESIGN.md`; `docs/CONCEPT.md` is historical context only.
 
 ## Milestone 0.1 — Foundation and project skeleton
 
-Goal: establish architecture, contracts, and plugin bootstrap without feature completeness.
+Goal: establish architecture, contracts, plugin bootstrap, and close the storage compatibility decision before feature work depends on it.
 
 Scope:
 - Create layered folders/modules (`application`, `domain`, `infrastructure`, `ui`, `composition`).
 - Implement DI container/bootstrap in `main.ts`.
 - Define core interfaces (repositories, parser port, logger port, metrics port).
-- Add SQLite bootstrap + migration framework skeleton (no full schema yet).
+- Run storage compatibility spike for `isDesktopOnly: false`:
+  - validate SQLite-compatible local storage as the preferred adapter on desktop and mobile Obsidian,
+  - evaluate fallback local adapters only if SQLite cannot satisfy mobile constraints,
+  - confirm esbuild bundling and persistence location,
+  - reject implementations that rely on APIs unavailable in mobile Obsidian.
+- Run FIT/FIT.GZ parser feasibility spike:
+  - choose candidate parser/library or implementation path,
+  - verify esbuild bundle compatibility and bundle-size impact,
+  - validate desktop/mobile runtime compatibility,
+  - parse representative `.fit` and `.fit.gz` fixtures into the intermediate model.
+- Record final v1 storage adapter decision in `docs/TECHNICAL_DESIGN.md`.
+- Record final FIT/FIT.GZ parser decision in `docs/TECHNICAL_DESIGN.md`; if feasibility fails, explicitly update v1 format scope before Milestone 0.4.
+- Add chosen storage adapter bootstrap + migration framework skeleton (no full schema yet).
 - Add command registration shell with stable command IDs.
 - Add i18n foundation (EN/RU dictionaries and locale resolver).
+- Remove or migrate legacy prototype settings/commands that conflict with v1 scope (`tracksFolder`, custom basemap tile URL, prototype scan command).
 
 Deliverables:
 - Compiling plugin with initialized container.
 - Contract interfaces and stubs for all required services.
 - Empty but registered views/commands.
+- Storage adapter decision note with evidence from desktop/mobile smoke checks.
+- FIT/FIT.GZ parser feasibility note with fixture results and bundle/mobile findings.
 
 Done criteria:
 - `npm run build` passes.
 - Smoke test still passes.
-- No direct SQLite imports outside infrastructure layer.
+- No direct storage-adapter imports outside infrastructure layer.
+- Milestone 0.2 is blocked until the storage adapter decision is recorded, including whether v1 remains `isDesktopOnly: false` or intentionally becomes desktop-only.
+- Milestone 0.4 is blocked until the FIT/FIT.GZ parser decision is recorded or v1 format scope is explicitly changed.
 
 ## Milestone 0.2 — Storage schema and indexing meta
 
 Goal: get persistent storage ready for real indexing lifecycle.
 
 Scope:
-- Implement SQLite schema v1 tables and indexes.
+- Implement v1 logical storage schema and query indexes in the chosen adapter.
 - Implement migration `v1` and meta repository.
 - Persist/restore `first_scan_approved`, `scan_paused`, `last_run_interrupted`.
-- Implement logging subsystem with rotation `5 x 1 MB`.
+- Implement logging subsystem in `.obsidian/plugins/trackdex-obsidian/logs/` with rotation `5 x 1 MB`.
 
 Deliverables:
-- Working SQLite adapter repositories (CRUD baseline).
+- Working storage adapter repositories (CRUD baseline).
 - Migration run on plugin startup.
 - Rotating file logs with basic event records.
 
@@ -48,6 +65,8 @@ Done criteria:
 - New vault initializes schema correctly.
 - Existing DB upgrades through migration path.
 - Reset index removes only service index data.
+- Desktop and mobile storage smoke checks pass for create/read/update/delete and migration startup.
+- README draft documents plugin data dir location, sync implications, and log rotation.
 
 ## Milestone 0.3 — Scan engine and file status pipeline
 
@@ -79,12 +98,13 @@ Scope:
 - Implement parser router and format parsers:
   - GPX
   - TCX
-  - FIT
-  - FIT.GZ
+  - FIT (if feasibility gate passed)
+  - FIT.GZ (if feasibility gate passed)
 - Normalize timestamps/timezones and raw values.
 - Compute metrics (computed-only pipeline):
   - date, elapsed, distance, avg/max speed, elevation gain/loss (3m threshold),
   - optional HR/cadence/power.
+- Aggregate multi-segment/multi-track files as one catalog record and persist segment metadata for the view.
 - Persist data flags for missing fields.
 - Polyline simplification + bbox generation.
 
@@ -94,6 +114,7 @@ Deliverables:
 
 Done criteria:
 - Parser fixture tests cover valid/partial/invalid files.
+- FIT/FIT.GZ fixture tests are included when those formats remain in v1 scope.
 - Same file produces stable metrics across reindex runs.
 - Missing data is explicit, no fallback synthesis.
 
@@ -108,6 +129,7 @@ Scope:
 - Fallback behavior when tiles/network unavailable.
 - Attribution and legal text integration in view/settings.
 - Display computed metrics only.
+- Display segment list for multi-segment/multi-track files when segment metadata is available.
 
 Deliverables:
 - Opening a supported track file shows Track view.
@@ -128,6 +150,7 @@ Scope:
   - place,
   - sport.
 - Sorting and key filters (including errors/unindexed visibility).
+- Aggregates for distance and elapsed hours by month/year/custom range with sport filter.
 - Row fields and badges:
   - date, distance, duration, elevation, places, sport, status.
 
@@ -137,6 +160,7 @@ Deliverables:
 
 Done criteria:
 - Grouping and filtering work on mixed dataset.
+- Aggregates match computed track metrics and respect sport/date filters.
 - No-date/no-sport/error cases are explicitly represented.
 
 ## Milestone 0.7 — Places (frontmatter geometry + relations)
@@ -217,6 +241,7 @@ Scope:
   - parser fixtures,
   - smoke.
 - README updates (algorithms, privacy/network, known limits).
+- Remove or document any remaining legacy prototype settings that are not part of v1.
 - Manifest/versions/release checklist prep.
 
 Deliverables:
@@ -231,7 +256,7 @@ Done criteria:
 ## Cross-milestone quality gates
 
 - Architecture gate:
-  - application/domain layers cannot import concrete DB/parser libs.
+  - application/domain layers cannot import concrete storage/parser libs.
 - Safety gate:
   - track files are never modified by plugin.
 - UX gate:
