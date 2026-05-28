@@ -3,9 +3,10 @@
 ## 1. Purpose and scope
 
 This document defines the technical architecture and implementation plan for Trackdex v1 (Obsidian plugin), based on:
-- `docs/REQUIREMENTS.md` (source of truth),
-- `docs/PRODUCT_SPEC_V1.md`,
-- `docs/CONCEPT.md` (context only).
+- `docs/REQUIREMENTS.md` — normative source of truth for v1 product requirements,
+- `docs/PRODUCT_SPEC_V1.md` — task-ready product slice with acceptance criteria,
+- `docs/IMPLEMENTATION_PLAN.md` — milestone sequencing,
+- `docs/CONCEPT.md` — historical context only and may contain outdated ideas.
 
 Scope covers MVP requirements for:
 - vault-wide indexing of track files (`.gpx`, `.tcx`, `.fit`, `.fit.gz`),
@@ -17,13 +18,14 @@ Scope covers MVP requirements for:
 
 Out-of-scope items remain as defined in requirements.
 
-## 2. Key decisions (fixed)
+## 2. Key decisions and gates
 
-1. **Storage implementation:** SQLite in v1.
-2. **Storage access model:** business logic depends on repository interfaces only; SQLite is an adapter behind abstraction.
+1. **Storage implementation:** SQLite-compatible local storage is the preferred v1 direction, but the exact adapter/library is a Milestone 0.1 compatibility gate. The adapter must work in desktop and mobile Obsidian with `isDesktopOnly: false`, bundle with esbuild, persist locally in the plugin data area, and avoid APIs unavailable on mobile. If this cannot be proven early, v1 must explicitly choose another adapter or become desktop-only.
+2. **Storage access model:** business logic depends on repository interfaces only; the chosen storage engine is an adapter behind abstraction.
 3. **Metrics source in UI v1:** only `computed` metrics are displayed.
 4. **Log rotation:** hardcoded `5 files x 1 MB`.
-5. **Technical design file location:** `docs/TECHNICAL_DESIGN.md`.
+5. **FIT/FIT.GZ parser:** target v1 support, but the parser library/implementation is a Milestone 0.1 feasibility gate for bundle size, mobile compatibility, and available runtime APIs.
+6. **Technical design file location:** `docs/TECHNICAL_DESIGN.md`.
 
 ## 3. Architecture overview
 
@@ -37,9 +39,9 @@ Plugin follows layered architecture with strict dependency direction:
   - Contains use-cases and state machines.
 - **Domain layer**
   - Pure business logic: metric computation, geometry matching rules, normalization, status transitions.
-  - No direct dependency on Obsidian APIs, SQLite, or map library.
+  - No direct dependency on Obsidian APIs, storage adapters, parser libraries, or map library.
 - **Infrastructure layer**
-  - SQLite adapter, file parsers (GPX/TCX/FIT/FIT.GZ), Obsidian event adapters, logging, map tile adapter.
+  - Storage adapter, file parsers (GPX/TCX/FIT/FIT.GZ), Obsidian event adapters, logging, map tile adapter.
 
 Dependency rule: `UI -> Application -> Domain`, while Infrastructure is injected into Application via interfaces.
 
@@ -82,15 +84,18 @@ src/
       errors.ts
   infrastructure/
     storage/
-      sqlite/
-        sqlite-db.ts
-        migrations.ts
-        repositories/
-          sqlite-track-repository.ts
-          sqlite-place-repository.ts
-          sqlite-link-repository.ts
-          sqlite-index-meta-repository.ts
+      storage-adapter.ts
+      migrations.ts
+      repositories/
+        track-repository.ts
+        place-repository.ts
+        link-repository.ts
+        index-meta-repository.ts
+      candidates/
+        sqlite-wasm-storage-adapter.ts
+        indexed-db-storage-adapter.ts
     parsers/
+      parser-feasibility.ts
       gpx-parser.ts
       tcx-parser.ts
       fit-parser.ts
@@ -144,18 +149,24 @@ Application and domain logic must depend on interfaces:
 - `PerfMetricsPort`
   - write measurement events/counters/timers.
 
-SQLite repositories are one concrete adapter set implementing these ports.
+Concrete storage repositories are adapter implementations of these ports. SQLite-compatible storage is the preferred candidate; IndexedDB or another local browser-safe engine is a fallback only if SQLite cannot be made reliable on mobile Obsidian. The final v1 choice must be recorded before Milestone 0.2 starts.
 
-## 6. Data model (SQLite physical schema v1)
+FIT/FIT.GZ support must also be validated before full parser implementation starts. The selected parser must:
+- bundle with esbuild without dynamic native/Node-only dependencies,
+- run in desktop and mobile Obsidian,
+- parse representative FIT/FIT.GZ fixtures into the unified intermediate model,
+- keep bundle size within the release-readiness threshold set during the spike.
 
-Schema reflects logical model from requirements; computed-only metrics are persisted in dedicated fields.
+## 6. Data model (logical schema v1)
+
+Schema reflects logical model from requirements; computed-only metrics are persisted in dedicated fields. Table names below describe the canonical logical model. If the selected storage engine is not SQL, it must preserve equivalent records, keys, indexes/query paths, and migration semantics.
 
 ### 6.1 Tables
 
 1. `tracks`
    - `path TEXT PRIMARY KEY`
    - `mtime_ms INTEGER NOT NULL`
-   - `sha256 TEXT NULL`
+   - `sha256 TEXT NULL` (optional change fingerprint only; duplicate-detection UX remains out of scope)
    - `status TEXT NOT NULL CHECK status IN (...)`
    - `error_message TEXT NULL`
    - `error_details TEXT NULL`
@@ -216,6 +227,7 @@ Schema reflects logical model from requirements; computed-only metrics are persi
 - Use explicit migration scripts with monotonic `schema_version`.
 - On plugin load: run pending migrations inside transaction.
 - On migration failure: surface clear error in UI; plugin should remain non-destructive.
+- Milestone 0.1 must validate that the selected adapter supports these migration semantics on both desktop and mobile.
 
 ## 7. Indexing and processing design
 
@@ -270,6 +282,7 @@ Rules implemented in domain services:
 - `distance_m`: sum of segment distances between consecutive points.
 - `avg_speed_mps`: `distance / elapsed` when elapsed > 0.
 - `max_speed_mps`: from samples if present, else derived from point deltas if feasible.
+- Multi-segment/multi-track files are normalized as one catalog record; metrics aggregate across all segments and `segments_json` preserves segment metadata needed for the view.
 - `elevation_gain/loss`:
   - for each adjacent pair, `delta_h`,
   - include in gain only if `delta_h >= 3m`,
@@ -342,7 +355,9 @@ Implementation detail:
   - graceful map fallback without tiles.
 - `TracksSidebarView`:
   - group by date/place/sport,
-  - filters/sort,
+  - sort by date/distance/duration,
+  - filter by status/error, sport, place, date range,
+  - month/year/custom range aggregates for distance and elapsed hours with sport filter,
   - badges for status/errors/missing fields.
 
 ## 12.2 Commands (stable IDs)
@@ -367,10 +382,11 @@ Display names can be localized; IDs remain stable.
 
 ## 13. Logging and diagnostics
 
-- Local rotating log files in plugin data directory.
+- Local rotating log files in `.obsidian/plugins/trackdex-obsidian/logs/`.
 - Rotation policy hardcoded: **5 files x 1 MB**.
 - No automatic upload/telemetry.
 - Error UI shows short message + expandable technical details.
+- Logs and index files live under the plugin data directory and may be included in vault sync depending on the user's sync tool/settings. v1 does not automatically exclude them from sync; README documents the location and size controls.
 
 Suggested log events:
 - scan start/end,
@@ -404,7 +420,7 @@ Targets:
    - desktop steady-state indexing process overhead **<= 300 MB** plugin-related peak,
    - mobile target **<= 180 MB** plugin-related peak.
 
-These are engineering thresholds, not strict user-visible SLA.
+These are engineering thresholds, not strict user-visible SLA. Desktop targets are v1 release gates; mobile targets are aspirational until the storage and parser feasibility gates produce baseline data.
 
 ## 14.2 How actual values are measured
 
@@ -435,13 +451,14 @@ Recommended artifacts:
    - distance/elevation/time calculations.
    - timezone normalization.
    - geometry predicates.
-2. **Integration tests (application + sqlite adapter)**
+2. **Integration tests (application + storage adapter)**
    - indexing state transitions,
    - migration behavior,
    - incremental update flows.
 3. **Parser fixture tests**
    - GPX/TCX/FIT/FIT.GZ valid, partial, malformed.
    - multi-segment aggregation.
+   - FIT/FIT.GZ parser compatibility fixtures from the feasibility gate.
 4. **UI smoke tests**
    - open track view by click,
    - sidebar grouping/filtering,
@@ -452,7 +469,7 @@ Recommended artifacts:
 ## 16. Delivery plan (phased)
 
 1. Foundation:
-   - interfaces, DI container, sqlite adapter skeleton, migrations.
+   - interfaces, DI container, storage compatibility spike, FIT parser feasibility spike, chosen adapter skeleton, migrations.
 2. Indexing core:
    - scanner, queue, statuses, first-scan flow.
 3. Parsers + computed metrics:
@@ -477,14 +494,14 @@ Recommended artifacts:
 - **Map provider instability**
   - degrade gracefully to geometry-only rendering without tiles.
 - **Abstraction erosion**
-  - enforce lint/code review rule: domain/application must not import sqlite or parser libs directly.
+  - enforce lint/code review rule: domain/application must not import storage adapters or parser libs directly.
 
 ## 18. Definition of done for technical implementation
 
 Technical implementation is considered done when:
 - all Must requirements from `docs/REQUIREMENTS.md` are implemented,
 - architecture layering and repository abstraction are respected,
-- SQLite is only used behind infrastructure adapters,
+- the selected storage engine is only used behind infrastructure adapters and is verified on desktop/mobile,
 - computed-only metrics are displayed in UI,
 - performance report can be generated and compared to thresholds,
 - automated tests cover critical domain and integration paths,
