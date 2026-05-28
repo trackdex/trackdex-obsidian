@@ -6,6 +6,7 @@ import {
 	type TrackdexSettings,
 } from "./ui/settings/settings-tab";
 import {registerTrackView} from "./ui/views/register-track-view";
+import {ENABLE_STORAGE_SPIKE} from "./infrastructure/storage/candidates/spike-config";
 
 export default class TrackdexPlugin extends Plugin {
 	settings: TrackdexSettings;
@@ -55,6 +56,13 @@ export default class TrackdexPlugin extends Plugin {
 		});
 
 		this.addSettingTab(new TrackdexSettingTab(this.app, this));
+
+		if (ENABLE_STORAGE_SPIKE) {
+			const {registerStorageSpikeCommand} = await import(
+				"./infrastructure/storage/candidates/register-storage-spike-command"
+			);
+			registerStorageSpikeCommand(this);
+		}
 	}
 
 	onunload(): void {

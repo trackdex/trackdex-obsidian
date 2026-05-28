@@ -17,6 +17,40 @@ TODO: set repository URL in this banner
 
 const prod = (process.argv[2] === "production");
 
+const SQL_WASM_PATH = join(ROOT, "node_modules/sql.js/dist/sql-wasm.wasm");
+
+/** Inline sql.js WASM for Obsidian (no separate .wasm asset in plugin folder). */
+function sqlWasmEmbedPlugin() {
+	return {
+		name: "sql-wasm-embed",
+		setup(build) {
+			build.onResolve({ filter: /^trackdex:sql-wasm$/ }, () => ({
+				path: "trackdex-sql-wasm",
+				namespace: "sql-wasm-embed",
+			}));
+			build.onLoad({ filter: /.*/, namespace: "sql-wasm-embed" }, () => {
+				const wasm = readFileSync(SQL_WASM_PATH);
+				const base64 = wasm.toString("base64");
+				return {
+					contents: [
+						`const SQL_WASM_BASE64 = ${JSON.stringify(base64)};`,
+						"export function getSqlWasmBinary() {",
+						"  if (typeof Buffer !== 'undefined') {",
+						"    return new Uint8Array(Buffer.from(SQL_WASM_BASE64, 'base64'));",
+						"  }",
+						"  const bin = atob(SQL_WASM_BASE64);",
+						"  const bytes = new Uint8Array(bin.length);",
+						"  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);",
+						"  return bytes;",
+						"}",
+					].join("\n"),
+					loader: "js",
+				};
+			});
+		},
+	};
+}
+
 function writeStylesCss() {
 	const leafletCss = readFileSync(
 		join(ROOT, "node_modules/leaflet/dist/leaflet.css"),
@@ -62,6 +96,7 @@ const context = await esbuild.context({
 	outfile: join(ROOT, "main.js"),
 	minify: prod,
 	plugins: [
+		sqlWasmEmbedPlugin(),
 		{
 			name: "trackdex-assets",
 			setup(build) {

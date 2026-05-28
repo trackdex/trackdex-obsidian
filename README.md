@@ -13,7 +13,7 @@ npm install
 npm run dev
 ```
 
-Build for release: `npm run build`. Deploy to the local dev vault: `npm run deploy:dev`.
+Build for release: `npm run build`. Deploy to the local dev vault: `npm run deploy:dev`. Push the dev vault to a connected Android device: `npm run deploy:android`.
 
 ## Source layout (0.1-01)
 
@@ -38,6 +38,7 @@ Legacy prototype settings and demo commands remain until milestone **0.1-13**. N
 - `npm run test` - запуск базового smoke-теста через встроенный Node test runner.
 - `npm run deploy` - деплой через `scripts/deploy.mjs`.
 - `npm run deploy:dev` - деплой в dev-хранилище (`trackdex-dev-vault`).
+- `npm run deploy:android` - `deploy:dev`, затем push `trackdex-dev-vault` на устройство в `/sdcard/trackdex-dev-vault` (нужен `adb` в PATH, ровно одно USB-устройство с отладкой; при отсутствии Obsidian — скачивание и установка APK).
 - `npm run version` - bump версии через `scripts/version-bump.mjs` + `git add manifest.json versions.json`.
 - `npm run lint` - запуск ESLint по проекту.
 

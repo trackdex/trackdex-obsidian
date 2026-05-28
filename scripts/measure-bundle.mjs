@@ -1,0 +1,70 @@
+import esbuild from "esbuild";
+import { readFileSync, statSync } from "node:fs";
+import { builtinModules } from "node:module";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const MAIN_OUT = join(ROOT, "main.js");
+const SPIKE_ONLY_OUT = join(ROOT, "main.js.spike-only.tmp");
+
+function formatMb(bytes) {
+	return `${(bytes / (1024 * 1024)).toFixed(2)} MB (${bytes} bytes)`;
+}
+
+function sqlWasmEmbedPlugin() {
+	const wasmPath = join(ROOT, "node_modules/sql.js/dist/sql-wasm.wasm");
+	return {
+		name: "sql-wasm-embed",
+		setup(build) {
+			build.onResolve({ filter: /^trackdex:sql-wasm$/ }, () => ({
+				path: "trackdex-sql-wasm",
+				namespace: "sql-wasm-embed",
+			}));
+			build.onLoad({ filter: /.*/, namespace: "sql-wasm-embed" }, () => {
+				const base64 = readFileSync(wasmPath).toString("base64");
+				return {
+					contents: [
+						`const SQL_WASM_BASE64 = ${JSON.stringify(base64)};`,
+						"export function getSqlWasmBinary() {",
+						"  return new Uint8Array(Buffer.from(SQL_WASM_BASE64, 'base64'));",
+						"}",
+					].join("\n"),
+					loader: "js",
+				};
+			});
+		},
+	};
+}
+
+async function buildSpikeOnly() {
+	await esbuild.build({
+		entryPoints: [
+			join(ROOT, "src/infrastructure/storage/candidates/spike-bundle-entry.ts"),
+		],
+		bundle: true,
+		outfile: SPIKE_ONLY_OUT,
+		format: "cjs",
+		target: "es2018",
+		minify: true,
+		treeShaking: true,
+		external: ["obsidian", "electron", ...builtinModules],
+		plugins: [sqlWasmEmbedPlugin()],
+		logLevel: "silent",
+	});
+	return statSync(SPIKE_ONLY_OUT).size;
+}
+
+const productionMainSize = statSync(MAIN_OUT).size;
+const spikeOnlySize = await buildSpikeOnly();
+const wasmSize = statSync(
+	join(ROOT, "node_modules/sql.js/dist/sql-wasm.wasm"),
+).size;
+
+console.log("Bundle size report (run after `npm run build`):");
+console.log(`  production main.js (ENABLE_STORAGE_SPIKE=false): ${formatMb(productionMainSize)}`);
+console.log(`  sql.js + embedded WASM only (isolated minified bundle): ${formatMb(spikeOnlySize)}`);
+console.log(`  raw sql-wasm.wasm on disk: ${formatMb(wasmSize)}`);
+console.log(
+	`  rough main.js with spike enabled (estimate): ${formatMb(productionMainSize + spikeOnlySize)}`,
+);

@@ -27,6 +27,7 @@ export default tseslint.config(
 		"dist",
 		"scripts/build.mjs",
 		"scripts/deploy.mjs",
+		"scripts/deploy-android.mjs",
 		"eslint.config.js",
 		"scripts/version-bump.mjs",
 		"versions.json",
