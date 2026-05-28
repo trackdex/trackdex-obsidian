@@ -1,0 +1,492 @@
+# Trackdex — Technical Design (v1)
+
+## 1. Purpose and scope
+
+This document defines the technical architecture and implementation plan for Trackdex v1 (Obsidian plugin), based on:
+- `docs/REQUIREMENTS.md` (source of truth),
+- `docs/PRODUCT_SPEC_V1.md`,
+- `docs/CONCEPT.md` (context only).
+
+Scope covers MVP requirements for:
+- vault-wide indexing of track files (`.gpx`, `.tcx`, `.fit`, `.fit.gz`),
+- custom track view (map + stats),
+- sidebar catalog (date/place/sport groupings),
+- places and note links,
+- deterministic computed metrics,
+- indexing UX, logs, settings, and i18n.
+
+Out-of-scope items remain as defined in requirements.
+
+## 2. Key decisions (fixed)
+
+1. **Storage implementation:** SQLite in v1.
+2. **Storage access model:** business logic depends on repository interfaces only; SQLite is an adapter behind abstraction.
+3. **Metrics source in UI v1:** only `computed` metrics are displayed.
+4. **Log rotation:** hardcoded `5 files x 1 MB`.
+5. **Technical design file location:** `docs/TECHNICAL_DESIGN.md`.
+
+## 3. Architecture overview
+
+Plugin follows layered architecture with strict dependency direction:
+
+- **UI layer**
+  - Obsidian views, sidebar, settings tab, commands, progress panel.
+  - Uses application services only.
+- **Application layer**
+  - Orchestrates indexing pipeline, reindex workflows, query/read models.
+  - Contains use-cases and state machines.
+- **Domain layer**
+  - Pure business logic: metric computation, geometry matching rules, normalization, status transitions.
+  - No direct dependency on Obsidian APIs, SQLite, or map library.
+- **Infrastructure layer**
+  - SQLite adapter, file parsers (GPX/TCX/FIT/FIT.GZ), Obsidian event adapters, logging, map tile adapter.
+
+Dependency rule: `UI -> Application -> Domain`, while Infrastructure is injected into Application via interfaces.
+
+## 4. Proposed module structure
+
+```text
+src/
+  main.ts
+  composition/
+    container.ts
+  application/
+    services/
+      indexing-service.ts
+      place-reindex-service.ts
+      link-index-service.ts
+      track-query-service.ts
+    workflows/
+      first-scan-consent.ts
+      resume-after-interrupt.ts
+    ports/
+      repositories.ts
+      parser-port.ts
+      logger-port.ts
+      clock-port.ts
+      metrics-port.ts
+  domain/
+    track/
+      track-entity.ts
+      track-status.ts
+      compute-metrics.ts
+      timezone-normalization.ts
+    place/
+      place-entity.ts
+      geometry.ts
+      match-track-to-place.ts
+    links/
+      note-track-link.ts
+    shared/
+      result.ts
+      errors.ts
+  infrastructure/
+    storage/
+      sqlite/
+        sqlite-db.ts
+        migrations.ts
+        repositories/
+          sqlite-track-repository.ts
+          sqlite-place-repository.ts
+          sqlite-link-repository.ts
+          sqlite-index-meta-repository.ts
+    parsers/
+      gpx-parser.ts
+      tcx-parser.ts
+      fit-parser.ts
+      fit-gz-parser.ts
+      parser-router.ts
+    obsidian/
+      vault-events-adapter.ts
+      metadata-link-adapter.ts
+      commands-registry.ts
+    logging/
+      rotating-file-logger.ts
+    map/
+      tile-provider.ts
+      map-view-adapter.ts
+  ui/
+    views/
+      track-view.ts
+      tracks-sidebar-view.ts
+    settings/
+      settings-tab.ts
+    components/
+      indexing-progress.ts
+      empty-state-first-scan.ts
+      status-badges.ts
+    i18n/
+      en.ts
+      ru.ts
+```
+
+`main.ts` remains thin: bootstrap DI container, register commands/views/events, load settings, dispose resources on unload.
+
+## 5. Core interfaces (abstractions)
+
+Application and domain logic must depend on interfaces:
+
+- `TrackRepository`
+  - CRUD/upsert for track index entries.
+  - status updates (`pending/indexing/indexed/stale/error`).
+  - query for sidebar and track view.
+- `PlaceRepository`
+  - upsert places from notes, validation/error status.
+  - relation operations to `track_places`.
+- `NoteLinkRepository`
+  - upsert links from markdown notes to track files.
+- `IndexMetaRepository`
+  - `schemaVersion`, `firstScanApproved`, `scanPaused`, `lastFullScanAt`, interrupted run marker.
+- `TrackParserPort`
+  - parse file into normalized intermediate model.
+- `LoggerPort`
+  - structured logging with levels.
+- `PerfMetricsPort`
+  - write measurement events/counters/timers.
+
+SQLite repositories are one concrete adapter set implementing these ports.
+
+## 6. Data model (SQLite physical schema v1)
+
+Schema reflects logical model from requirements; computed-only metrics are persisted in dedicated fields.
+
+### 6.1 Tables
+
+1. `tracks`
+   - `path TEXT PRIMARY KEY`
+   - `mtime_ms INTEGER NOT NULL`
+   - `sha256 TEXT NULL`
+   - `status TEXT NOT NULL CHECK status IN (...)`
+   - `error_message TEXT NULL`
+   - `error_details TEXT NULL`
+   - `title_from_file TEXT NULL`
+   - `started_at_utc TEXT NULL`
+   - `ended_at_utc TEXT NULL`
+   - `started_at_raw TEXT NULL`
+   - `ended_at_raw TEXT NULL`
+   - `timezone_source TEXT NOT NULL` (`explicit|indexing_local|unknown`)
+   - `timezone_offset_min INTEGER NULL`
+   - `duration_sec REAL NULL`
+   - `distance_m REAL NULL`
+   - `elevation_gain_m REAL NULL`
+   - `elevation_loss_m REAL NULL`
+   - `avg_speed_mps REAL NULL`
+   - `max_speed_mps REAL NULL`
+   - `sport_raw TEXT NULL`
+   - `sport_normalized TEXT NULL`
+   - `bbox_json TEXT NULL`
+   - `polyline_simplified_json TEXT NULL`
+   - `segments_json TEXT NULL`
+   - `data_flags_json TEXT NOT NULL`
+   - `hr_avg REAL NULL`
+   - `hr_max REAL NULL`
+   - `power_avg REAL NULL`
+   - `cadence_avg REAL NULL`
+   - Indexes: `(status)`, `(started_at_utc)`, `(sport_normalized)`.
+
+2. `places`
+   - `note_path TEXT PRIMARY KEY`
+   - `geometry_kind TEXT NOT NULL`
+   - `geometry_json TEXT NOT NULL`
+   - `bbox_json TEXT NULL`
+   - `is_valid INTEGER NOT NULL`
+   - `error_message TEXT NULL`
+   - Index: `(is_valid)`.
+
+3. `track_places`
+   - `track_path TEXT NOT NULL`
+   - `place_note_path TEXT NOT NULL`
+   - `last_visit_at_utc TEXT NULL`
+   - PK `(track_path, place_note_path)`.
+   - Indexes `(place_note_path, last_visit_at_utc)`.
+
+4. `note_track_links`
+   - `note_path TEXT NOT NULL`
+   - `track_path TEXT NOT NULL`
+   - `link_text TEXT NOT NULL`
+   - PK `(note_path, track_path, link_text)`.
+   - Indexes `(track_path)`, `(note_path)`.
+
+5. `index_meta`
+   - single-row KV or normalized key/value schema.
+   - Required keys: `schema_version`, `first_scan_approved`, `scan_paused`, `last_full_scan_at_utc`, `last_run_interrupted`.
+
+### 6.2 Migration policy
+
+- Use explicit migration scripts with monotonic `schema_version`.
+- On plugin load: run pending migrations inside transaction.
+- On migration failure: surface clear error in UI; plugin should remain non-destructive.
+
+## 7. Indexing and processing design
+
+## 7.1 First scan and lifecycle
+
+1. Plugin start:
+   - load settings + meta.
+   - if `first_scan_approved=false`: show first-scan empty state.
+2. User confirms first scan:
+   - set `first_scan_approved=true`.
+   - enqueue full scan job.
+3. Future starts:
+   - if not paused: incremental listeners active.
+   - if previous run interrupted: show banner/button "check and continue".
+
+## 7.2 Scanning strategy
+
+- Vault recursive discovery for supported extensions, case-insensitive.
+- Default excludes: `.obsidian/**`, `.trash/**`.
+- Additional user excludes: glob/ignore-like vault-relative patterns.
+- Event-driven incrementals: `create`, `modify`, `delete`, `rename`.
+- Work queue with bounded concurrency (default `2` desktop, `1` mobile).
+- Micro-batches with yield to event loop to keep UI responsive.
+
+## 7.3 File state machine
+
+`pending -> indexing -> indexed`
+`pending/indexing -> error`
+`indexed -> stale -> indexing`
+
+Deletion flow: remove row and all relations for deleted track path.
+Rename flow: update path atomically when possible, otherwise delete+reinsert with relation remap.
+
+## 7.4 Parser pipeline
+
+Per file:
+1. mark `indexing`.
+2. parse by extension router.
+3. normalize to unified intermediate model.
+4. compute deterministic metrics (domain services).
+5. simplify polyline for map rendering.
+6. persist row as `indexed` with flags OR `error` with details.
+
+Broken/unparseable file is kept visible in catalog with `error`.
+
+## 8. Metrics and normalization (computed-only)
+
+Rules implemented in domain services:
+
+- `track_date`: first point timestamp / start time by format.
+- `elapsed_sec`: last timestamp - first timestamp.
+- `distance_m`: sum of segment distances between consecutive points.
+- `avg_speed_mps`: `distance / elapsed` when elapsed > 0.
+- `max_speed_mps`: from samples if present, else derived from point deltas if feasible.
+- `elevation_gain/loss`:
+  - for each adjacent pair, `delta_h`,
+  - include in gain only if `delta_h >= 3m`,
+  - include in loss only if `delta_h <= -3m` using absolute.
+- optional fields (HR/cadence/power) only when present.
+- missing fields represented via `data_flags_json`; no fake fallback values.
+
+`file_metrics_json` is omitted from v1 display pipeline (stored only if future compatibility needed, optional).
+
+## 9. Timezone model
+
+- If source has explicit timezone/offset:
+  - keep raw timestamp string,
+  - store normalized UTC,
+  - `timezone_source=explicit`.
+- If source lacks timezone:
+  - interpret as local at indexing moment,
+  - store raw + computed UTC + indexing offset,
+  - `timezone_source=indexing_local`.
+- UI always renders in current local timezone and shows timezone source/offset metadata.
+
+No manual timezone override in v1.
+
+## 10. Places and geometry matching
+
+## 10.1 Place source
+
+Place is note with frontmatter:
+- `trackdex-type: place`
+- `trackdex-geometry` with `kind` in `point|circle|rectangle|polygon`.
+
+Invalid YAML/geometry:
+- place row marked invalid with error message,
+- not used in `track_places`.
+
+## 10.2 Geometry rules
+
+v1 rule: track belongs to place if **at least one track point** is inside geometry.
+
+Supported:
+- `point` (+ default or explicit radius),
+- `circle`,
+- `rectangle` (south/west/north/east),
+- `polygon` (single outer ring only, no holes).
+
+Implementation detail:
+- prefilter by bbox intersection first,
+- then exact point-in-geometry checks.
+
+## 10.3 Reindex strategy
+
+- Auto reindex on place note change (debounced).
+- Manual command "Reindex places" recalculates all `track_places`.
+- When place marker removed, corresponding relations are deleted.
+
+## 11. Note link indexing
+
+- Scan markdown notes through Obsidian metadata/link APIs.
+- Resolve links with native Obsidian resolution.
+- Persist many-to-many relations in `note_track_links`.
+- Refresh on `.md` changes; avoid full rescan when incremental event is enough.
+
+## 12. UI and command integration
+
+## 12.1 Views
+
+- `TrackView`:
+  - desktop split: map left, stats right,
+  - mobile tabs: map/stats,
+  - graceful map fallback without tiles.
+- `TracksSidebarView`:
+  - group by date/place/sport,
+  - filters/sort,
+  - badges for status/errors/missing fields.
+
+## 12.2 Commands (stable IDs)
+
+- `scan-or-resume-indexing`
+- `reindex-places`
+- `make-current-note-place`
+- `edit-current-place-geometry`
+- `pause-indexing`
+- `reset-rebuild-index`
+
+Display names can be localized; IDs remain stable.
+
+## 12.3 Settings
+
+- Units metric/imperial.
+- Exclude patterns.
+- Default POI radius.
+- Pause/resume indexing.
+- Reset/rebuild index with confirmation.
+- Legal/privacy section for tiles/network/attribution.
+
+## 13. Logging and diagnostics
+
+- Local rotating log files in plugin data directory.
+- Rotation policy hardcoded: **5 files x 1 MB**.
+- No automatic upload/telemetry.
+- Error UI shows short message + expandable technical details.
+
+Suggested log events:
+- scan start/end,
+- file parse start/end/error,
+- batch timing,
+- place reindex timing,
+- link reindex timing,
+- migration start/end/error.
+
+## 14. Performance targets and measurement plan
+
+Targets are set as realistic engineering thresholds for v1 and can be tuned after baseline runs.
+
+## 14.1 Acceptance targets (SLO-like for v1)
+
+Test dataset profile:
+- 2,000 track files,
+- total track file size ~500 MB,
+- 10,000 markdown notes,
+- 500 place notes.
+
+Targets:
+1. Full initial indexing on desktop (mid-range laptop): **<= 20 min**.
+2. Incremental reindex single modified track: **p95 <= 3 s** from vault event to `indexed`.
+3. Place full reindex (500 places, 2,000 tracks): **<= 90 s**.
+4. Markdown links incremental update for one note: **p95 <= 500 ms**.
+5. Plugin startup overhead (without first full scan): **<= 1.5 s** until UI ready.
+6. UI responsiveness during indexing:
+   - no continuous main-thread block > 100 ms.
+7. Memory envelope:
+   - desktop steady-state indexing process overhead **<= 300 MB** plugin-related peak,
+   - mobile target **<= 180 MB** plugin-related peak.
+
+These are engineering thresholds, not strict user-visible SLA.
+
+## 14.2 How actual values are measured
+
+Implement lightweight internal performance instrumentation:
+
+- `perf_runs` structured log records:
+  - `run_id`, `operation`, `started_at`, `ended_at`, `duration_ms`, `items_count`, `success`, optional context.
+- `perf_counters`:
+  - files scanned, files parsed, parse errors, places reindexed, links updated.
+- Sampling for event latency:
+  - record timestamp on vault event reception and on indexed persistence.
+- Optional debug command:
+  - "Export performance report" generates JSON summary with p50/p95/p99.
+
+Comparison method:
+1. Execute benchmark scenarios on reference dataset.
+2. Export report JSON.
+3. Compare observed p95/total durations to thresholds in `14.1`.
+4. Mark each target `PASS/FAIL`.
+
+Recommended artifacts:
+- `docs/perf-baseline-v1.json` (generated, not hand-edited),
+- short markdown summary in release prep.
+
+## 15. Testing strategy
+
+1. **Unit tests (domain)**
+   - distance/elevation/time calculations.
+   - timezone normalization.
+   - geometry predicates.
+2. **Integration tests (application + sqlite adapter)**
+   - indexing state transitions,
+   - migration behavior,
+   - incremental update flows.
+3. **Parser fixture tests**
+   - GPX/TCX/FIT/FIT.GZ valid, partial, malformed.
+   - multi-segment aggregation.
+4. **UI smoke tests**
+   - open track view by click,
+   - sidebar grouping/filtering,
+   - first-scan consent UX.
+5. **Performance baseline tests**
+   - scenario runs with performance report generation.
+
+## 16. Delivery plan (phased)
+
+1. Foundation:
+   - interfaces, DI container, sqlite adapter skeleton, migrations.
+2. Indexing core:
+   - scanner, queue, statuses, first-scan flow.
+3. Parsers + computed metrics:
+   - GPX/TCX/FIT/FIT.GZ normalization and domain metrics.
+4. UI:
+   - track view, sidebar, progress panel, settings.
+5. Places + links:
+   - frontmatter parsing, geometry matching, note link indexing.
+6. Hardening:
+   - logging rotation, error details, performance instrumentation.
+7. Test and polish:
+   - i18n EN/RU, compatibility checks desktop/mobile.
+
+## 17. Risks and mitigations (implementation)
+
+- **Large-vault performance drift**
+  - mitigate with bounded concurrency, batching, cached derived fields.
+- **Parser variability across formats**
+  - normalize through strict intermediate model + fixture matrix.
+- **Mobile constraints**
+  - mobile-specific concurrency defaults and memory guards.
+- **Map provider instability**
+  - degrade gracefully to geometry-only rendering without tiles.
+- **Abstraction erosion**
+  - enforce lint/code review rule: domain/application must not import sqlite or parser libs directly.
+
+## 18. Definition of done for technical implementation
+
+Technical implementation is considered done when:
+- all Must requirements from `docs/REQUIREMENTS.md` are implemented,
+- architecture layering and repository abstraction are respected,
+- SQLite is only used behind infrastructure adapters,
+- computed-only metrics are displayed in UI,
+- performance report can be generated and compared to thresholds,
+- automated tests cover critical domain and integration paths,
+- no violations of privacy/offline/read-only principles.
+
