@@ -1,5 +1,9 @@
 # Trackdex
 
+[![tests](https://img.shields.io/github/actions/workflow/status/trackdex/trackdex-obsidian/lint.yml?branch=main&label=tests)](https://github.com/trackdex/trackdex-obsidian/actions/workflows/lint.yml?query=branch%3Amain)
+
+Trackdex — your track index. An Obsidian-based local catalog for GPX, FIT, and more.
+
 Read-only catalog of GPX tracks in your Obsidian vault: browse files, view tracks on a map, filter by region, and see stats.
 
 ## Install
