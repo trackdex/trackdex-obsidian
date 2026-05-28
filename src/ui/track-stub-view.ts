@@ -9,6 +9,11 @@ import {
 	type TrackBasemap,
 	type TrackMapViewState,
 } from "../map/track-basemap";
+import {
+	addTrackRouteLayer,
+	type TrackRouteLayer,
+} from "../map/track-route-layer";
+import {parseGpxTrackPoints} from "../parsers/parse-gpx-track";
 import type TrackdexPlugin from "../main";
 import {
 	refreshViewNavButtons,
@@ -18,6 +23,7 @@ import {preserveSettingsFocus} from "../utils/preserve-settings-focus";
 
 export class TrackStubView extends TextFileView {
 	private basemap: TrackBasemap | null = null;
+	private routeLayer: TrackRouteLayer | null = null;
 	private mapContainerEl: HTMLElement | null = null;
 	private mapWrapEl: HTMLElement | null = null;
 	private mapErrorEl: HTMLElement | null = null;
@@ -335,6 +341,7 @@ export class TrackStubView extends TextFileView {
 					return;
 				}
 				this.mapErrorEl?.hide();
+				this.renderTrackRoute();
 				this.scheduleMapResize();
 				this.scheduleMapRefresh(false);
 				refreshViewNavButtons(this);
@@ -360,13 +367,40 @@ export class TrackStubView extends TextFileView {
 		});
 	}
 
-	private showMapError(message: string): void {
+	private showMapError(message: string, blocking = true): void {
 		if (!this.mapErrorEl) {
 			return;
 		}
 		this.mapErrorEl.setText(message);
-		this.mapErrorEl.addClass("trackdex-track-stub__map-error--blocking");
+		this.mapErrorEl.toggleClass(
+			"trackdex-track-stub__map-error--blocking",
+			blocking,
+		);
 		this.mapErrorEl.show();
+	}
+
+	private renderTrackRoute(): void {
+		this.clearRouteLayer();
+		if (!this.basemap || this.file?.extension?.toLowerCase() !== "gpx") {
+			return;
+		}
+
+		const parsed = parseGpxTrackPoints(this.data);
+		if (!parsed.ok) {
+			console.warn("Trackdex GPX parse:", parsed.message);
+			this.showMapError(parsed.message, false);
+			return;
+		}
+
+		const fitBounds = this.pendingMapView === null;
+		this.routeLayer = addTrackRouteLayer(this.basemap, parsed.points, {
+			fitBounds,
+		});
+	}
+
+	private clearRouteLayer(): void {
+		this.routeLayer?.remove();
+		this.routeLayer = null;
 	}
 
 	private attachMapVisibilityObserver(mapContainer: HTMLElement): void {
@@ -401,6 +435,7 @@ export class TrackStubView extends TextFileView {
 		this.onMapRefresh.cancel();
 		this.detachMapVisibilityObserver();
 		this.mapWasVisible = false;
+		this.clearRouteLayer();
 		const basemap = this.basemap;
 		this.basemap = null;
 		destroyTrackBasemap(basemap);
