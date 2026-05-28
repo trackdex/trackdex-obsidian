@@ -2,7 +2,7 @@ import L, {type Map as LeafletMap, type TileLayer} from "leaflet";
 import {
 	DEFAULT_BASEMAP_ATTRIBUTION,
 	DEFAULT_BASEMAP_TILE_URL,
-} from "../constants";
+} from "../../constants";
 
 const DEFAULT_CENTER: L.LatLngExpression = [50, 10];
 const DEFAULT_ZOOM = 4;

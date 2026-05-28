@@ -1,5 +1,5 @@
 import {debounce, Notice, TextFileView, type TFile, WorkspaceLeaf} from "obsidian";
-import {DEFAULT_BASEMAP_TILE_URL, TRACKDEX_TRACK_VIEW_TYPE} from "../constants";
+import {DEFAULT_BASEMAP_TILE_URL, TRACKDEX_TRACK_VIEW_TYPE} from "../../constants";
 import {
 	createTrackBasemap,
 	destroyTrackBasemap,
@@ -8,18 +8,18 @@ import {
 	resizeTrackBasemap,
 	type TrackBasemap,
 	type TrackMapViewState,
-} from "../map/track-basemap";
+} from "../../infrastructure/map/track-basemap";
 import {
 	addTrackRouteLayer,
 	type TrackRouteLayer,
-} from "../map/track-route-layer";
-import {parseGpxTrackPoints} from "../parsers/parse-gpx-track";
-import type TrackdexPlugin from "../main";
+} from "../../infrastructure/map/track-route-layer";
+import {parseGpxTrackPoints} from "../../infrastructure/parsers/gpx-parser";
+import type TrackdexPlugin from "../../main";
 import {
 	refreshViewNavButtons,
 	syncViewHeaderTitle,
-} from "../utils/file-view-nav";
-import {preserveSettingsFocus} from "../utils/preserve-settings-focus";
+} from "../components/file-view-nav";
+import {preserveSettingsFocus} from "../components/preserve-settings-focus";
 
 export class TrackStubView extends TextFileView {
 	private basemap: TrackBasemap | null = null;

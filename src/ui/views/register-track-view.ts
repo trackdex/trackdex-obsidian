@@ -1,9 +1,9 @@
 import {
 	TRACKDEX_GPX_EXTENSIONS,
 	TRACKDEX_TRACK_VIEW_TYPE,
-} from "../constants";
-import {TrackStubView} from "../ui/track-stub-view";
-import type TrackdexPlugin from "../main";
+} from "../../constants";
+import type TrackdexPlugin from "../../main";
+import {TrackStubView} from "./track-stub-view";
 
 export function registerTrackView(plugin: TrackdexPlugin): void {
 	plugin.registerView(

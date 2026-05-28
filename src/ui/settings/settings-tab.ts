@@ -1,7 +1,7 @@
 import {App, PluginSettingTab, Setting} from "obsidian";
-import {DEFAULT_BASEMAP_TILE_URL} from "./constants";
-import {normalizeBasemapTileUrl} from "./map/track-basemap";
-import TrackdexPlugin from "./main";
+import {DEFAULT_BASEMAP_TILE_URL} from "../../constants";
+import {normalizeBasemapTileUrl} from "../../infrastructure/map/track-basemap";
+import type TrackdexPlugin from "../../main";
 
 export interface TrackdexSettings {
 	tracksFolder: string;

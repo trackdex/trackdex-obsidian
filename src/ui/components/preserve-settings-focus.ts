@@ -1,5 +1,5 @@
 import type {App, WorkspaceLeaf} from "obsidian";
-import {TRACKDEX_TRACK_VIEW_TYPE} from "../constants";
+import {TRACKDEX_TRACK_VIEW_TYPE} from "../../constants";
 
 /** When Settings is open, avoid closing it by moving workspace focus off the track leaf. */
 export function preserveSettingsFocus(

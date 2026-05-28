@@ -1,7 +1,11 @@
 import {App, Editor, MarkdownView, Modal, Notice, Plugin} from 'obsidian';
-import {migrateSettings, TrackdexSettings, TrackdexSettingTab} from "./settings";
-import {preserveSettingsFocus} from "./utils/preserve-settings-focus";
-import {registerTrackView} from "./views/register-track-view";
+import {preserveSettingsFocus} from "./ui/components/preserve-settings-focus";
+import {
+	migrateSettings,
+	TrackdexSettingTab,
+	type TrackdexSettings,
+} from "./ui/settings/settings-tab";
+import {registerTrackView} from "./ui/views/register-track-view";
 
 export default class TrackdexPlugin extends Plugin {
 	settings: TrackdexSettings;

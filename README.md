@@ -15,6 +15,22 @@ npm run dev
 
 Build for release: `npm run build`. Deploy to the local dev vault: `npm run deploy:dev`.
 
+## Source layout (0.1-01)
+
+Plugin source follows layered modules under `src/`:
+
+- `composition/` — DI bootstrap (stub until milestone 0.1-07)
+- `application/` — use-cases and ports (placeholders)
+- `domain/` — pure business logic (placeholders)
+- `infrastructure/` — map (Leaflet), parsers (GPX), storage, logging, Obsidian adapters (placeholders where not yet implemented)
+- `ui/` — views, settings tab, components, i18n (placeholders for i18n)
+
+Prototype code moved in 0.1-01: track view and registration (`ui/views/`), settings (`ui/settings/`), view helpers (`ui/components/`), map (`infrastructure/map/`), GPX parser (`infrastructure/parsers/gpx-parser.ts`).
+
+Outside layers (unchanged): `src/constants.ts`, `src/styles/track-view.css`.
+
+Legacy prototype settings and demo commands remain until milestone **0.1-13**. No legacy re-export shims (`src/map`, `src/parsers`, etc.) — imports use the paths above.
+
 ## npm scripts
 
 - `npm run dev` - dev-сборка плагина через `scripts/build.mjs`.
