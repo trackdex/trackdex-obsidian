@@ -2,11 +2,14 @@ export { createNoopLoggerPort } from "./noop-logger-port";
 export {
 	appendLogEntry,
 	createObsidianLogFileIo,
+	createRotatingFileLoggerHandle,
 	createRotatingFileLoggerPort,
 	createRotatingFileLoggerPortFromConfig,
 	formatLogLine,
 	type LogFileIo,
+	type LogWriteQueue,
 	type RotatingFileLoggerConfig,
+	type RotatingFileLoggerHandle,
 } from "./file-logger";
 export {
 	LOG_FILE_BASENAME,

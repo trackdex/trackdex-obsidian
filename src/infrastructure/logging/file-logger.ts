@@ -139,11 +139,23 @@ export async function appendLogEntry(
 	await config.io.write(activePath, entry);
 }
 
+/** Logger port plus drain for plugin unload (0.2-09). */
+export interface RotatingFileLoggerHandle {
+	readonly port: LoggerPort;
+	flush(): Promise<void>;
+}
+
 /**
  * Rotating file logger (§13: 5 × 1 MB) under plugin data dir only.
  * Writes are serialized asynchronously; `LoggerPort` methods return immediately.
  */
 export function createRotatingFileLoggerPort(plugin: Plugin): LoggerPort {
+	return createRotatingFileLoggerHandle(plugin).port;
+}
+
+/** Composition wiring: shared write queue so unload can await pending log I/O. */
+export function createRotatingFileLoggerHandle(plugin: Plugin): RotatingFileLoggerHandle {
+	const writeQueue: LogWriteQueue = { tail: Promise.resolve() };
 	const io = createObsidianLogFileIo(plugin.app);
 	const logsDir = `${getPluginDataDir(plugin)}/${LOGS_SUBDIR}`;
 	const onIoError =
@@ -152,11 +164,17 @@ export function createRotatingFileLoggerPort(plugin: Plugin): LoggerPort {
 			console.error(`Trackdex log write failed: ${message}`);
 		};
 
-	return createRotatingFileLoggerPortFromConfig({
+	const port = createRotatingFileLoggerPortFromConfig({
 		io,
 		logsDir,
 		onIoError,
+		writeQueue,
 	});
+
+	return {
+		port,
+		flush: () => writeQueue.tail,
+	};
 }
 
 /** Factory for tests and composition wiring (0.2-09). */
