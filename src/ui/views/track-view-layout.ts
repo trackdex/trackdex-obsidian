@@ -13,10 +13,11 @@ export const TRACK_VIEW_LAYOUT_CLASSES = {
 	layoutTabStats: "trackdex-track-view__layout--tab-stats",
 	mapColumn: "trackdex-track-view__map-column",
 	statsColumn: "trackdex-track-view__stats-column",
-	statsPlaceholder: "trackdex-track-view__stats-placeholder",
+	statsPanelHost: "trackdex-track-view__stats-panel-host",
 	mapWrap: "trackdex-track-stub__map-wrap",
 	map: "trackdex-track-stub__map",
 	mapError: "trackdex-track-stub__map-error",
+	mapOfflineNotice: "trackdex-track-stub__map-offline-notice",
 } as const;
 
 export interface TrackViewLayoutElements {
@@ -26,10 +27,11 @@ export interface TrackViewLayoutElements {
 	layoutEl: HTMLElement;
 	mapColumnEl: HTMLElement;
 	statsColumnEl: HTMLElement;
-	statsPlaceholderEl: HTMLElement;
+	statsPanelHostEl: HTMLElement;
 	mapWrapEl: HTMLElement;
 	mapContainerEl: HTMLElement;
 	mapErrorEl: HTMLElement;
+	mapOfflineNoticeEl: HTMLElement;
 }
 
 export interface TrackViewLayoutTabLabels {
@@ -74,11 +76,13 @@ export function buildTrackViewLayout(
 	const mapColumnEl = layoutEl.createDiv({cls: c.mapColumn});
 	const mapWrapEl = mapColumnEl.createDiv({cls: c.mapWrap});
 	const mapContainerEl = mapWrapEl.createDiv({cls: c.map});
+	const mapOfflineNoticeEl = mapWrapEl.createDiv({cls: c.mapOfflineNotice});
+	mapOfflineNoticeEl.hide();
 	const mapErrorEl = mapWrapEl.createDiv({cls: c.mapError});
 	mapErrorEl.hide();
 
 	const statsColumnEl = layoutEl.createDiv({cls: c.statsColumn});
-	const statsPlaceholderEl = statsColumnEl.createDiv({cls: c.statsPlaceholder});
+	const statsPanelHostEl = statsColumnEl.createDiv({cls: c.statsPanelHost});
 
 	return {
 		mobileTabsEl,
@@ -87,9 +91,10 @@ export function buildTrackViewLayout(
 		layoutEl,
 		mapColumnEl,
 		statsColumnEl,
-		statsPlaceholderEl,
+		statsPanelHostEl,
 		mapWrapEl,
 		mapContainerEl,
 		mapErrorEl,
+		mapOfflineNoticeEl,
 	};
 }

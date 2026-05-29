@@ -15,3 +15,8 @@ export {
 	type FileViewNav,
 } from "./file-view-nav";
 export {preserveSettingsFocus} from "./preserve-settings-focus";
+export {
+	renderTrackStatsPanel,
+	type TrackStatsPanelHandle,
+	type RenderTrackStatsPanelOptions,
+} from "./track-stats-panel";
