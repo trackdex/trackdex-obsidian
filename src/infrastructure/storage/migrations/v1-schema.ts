@@ -78,10 +78,14 @@ CREATE TABLE IF NOT EXISTS ${TRACKS_TABLE} (
 );
 `;
 
+const IDX_TRACKS_STATUS = "idx_tracks_status";
+const IDX_TRACKS_STARTED_AT_UTC = "idx_tracks_started_at_utc";
+const IDX_TRACKS_SPORT_NORMALIZED = "idx_tracks_sport_normalized";
+
 export const CREATE_TRACKS_INDEXES_SQL = [
-	`CREATE INDEX IF NOT EXISTS idx_tracks_status ON ${TRACKS_TABLE} (status);`,
-	`CREATE INDEX IF NOT EXISTS idx_tracks_started_at_utc ON ${TRACKS_TABLE} (started_at_utc);`,
-	`CREATE INDEX IF NOT EXISTS idx_tracks_sport_normalized ON ${TRACKS_TABLE} (sport_normalized);`,
+	`CREATE INDEX IF NOT EXISTS ${IDX_TRACKS_STATUS} ON ${TRACKS_TABLE} (status);`,
+	`CREATE INDEX IF NOT EXISTS ${IDX_TRACKS_STARTED_AT_UTC} ON ${TRACKS_TABLE} (started_at_utc);`,
+	`CREATE INDEX IF NOT EXISTS ${IDX_TRACKS_SPORT_NORMALIZED} ON ${TRACKS_TABLE} (sport_normalized);`,
 ] as const;
 
 export const CREATE_PLACES_TABLE_SQL = `
@@ -95,8 +99,10 @@ CREATE TABLE IF NOT EXISTS ${PLACES_TABLE} (
 );
 `;
 
+const IDX_PLACES_IS_VALID = "idx_places_is_valid";
+
 export const CREATE_PLACES_INDEXES_SQL = [
-	`CREATE INDEX IF NOT EXISTS idx_places_is_valid ON ${PLACES_TABLE} (is_valid);`,
+	`CREATE INDEX IF NOT EXISTS ${IDX_PLACES_IS_VALID} ON ${PLACES_TABLE} (is_valid);`,
 ] as const;
 
 /**
@@ -112,8 +118,10 @@ CREATE TABLE IF NOT EXISTS ${TRACK_PLACES_TABLE} (
 );
 `;
 
+const IDX_TRACK_PLACES_PLACE_VISIT = "idx_track_places_place_visit";
+
 export const CREATE_TRACK_PLACES_INDEXES_SQL = [
-	`CREATE INDEX IF NOT EXISTS idx_track_places_place_visit ON ${TRACK_PLACES_TABLE} (place_note_path, last_visit_at_utc);`,
+	`CREATE INDEX IF NOT EXISTS ${IDX_TRACK_PLACES_PLACE_VISIT} ON ${TRACK_PLACES_TABLE} (place_note_path, last_visit_at_utc);`,
 ] as const;
 
 /** `track_path` → `tracks.path`. `note_path` is any vault markdown note path. */
@@ -126,10 +134,30 @@ CREATE TABLE IF NOT EXISTS ${NOTE_TRACK_LINKS_TABLE} (
 );
 `;
 
+const IDX_NOTE_TRACK_LINKS_TRACK = "idx_note_track_links_track";
+const IDX_NOTE_TRACK_LINKS_NOTE = "idx_note_track_links_note";
+
 export const CREATE_NOTE_TRACK_LINKS_INDEXES_SQL = [
-	`CREATE INDEX IF NOT EXISTS idx_note_track_links_track ON ${NOTE_TRACK_LINKS_TABLE} (track_path);`,
-	`CREATE INDEX IF NOT EXISTS idx_note_track_links_note ON ${NOTE_TRACK_LINKS_TABLE} (note_path);`,
+	`CREATE INDEX IF NOT EXISTS ${IDX_NOTE_TRACK_LINKS_TRACK} ON ${NOTE_TRACK_LINKS_TABLE} (track_path);`,
+	`CREATE INDEX IF NOT EXISTS ${IDX_NOTE_TRACK_LINKS_NOTE} ON ${NOTE_TRACK_LINKS_TABLE} (note_path);`,
 ] as const;
+
+/** §6.1 query indexes: name, table, column order for migration tests. */
+export const V1_QUERY_INDEX_SPECS = [
+	{ name: IDX_TRACKS_STATUS, table: TRACKS_TABLE, columns: ["status"] },
+	{ name: IDX_TRACKS_STARTED_AT_UTC, table: TRACKS_TABLE, columns: ["started_at_utc"] },
+	{ name: IDX_TRACKS_SPORT_NORMALIZED, table: TRACKS_TABLE, columns: ["sport_normalized"] },
+	{ name: IDX_PLACES_IS_VALID, table: PLACES_TABLE, columns: ["is_valid"] },
+	{
+		name: IDX_TRACK_PLACES_PLACE_VISIT,
+		table: TRACK_PLACES_TABLE,
+		columns: ["place_note_path", "last_visit_at_utc"],
+	},
+	{ name: IDX_NOTE_TRACK_LINKS_TRACK, table: NOTE_TRACK_LINKS_TABLE, columns: ["track_path"] },
+	{ name: IDX_NOTE_TRACK_LINKS_NOTE, table: NOTE_TRACK_LINKS_TABLE, columns: ["note_path"] },
+] as const;
+
+export const V1_INDEX_NAMES = V1_QUERY_INDEX_SPECS.map((spec) => spec.name);
 
 /** All v1 table/index DDL statements in apply order. */
 export const V1_DDL_STATEMENTS: readonly string[] = [

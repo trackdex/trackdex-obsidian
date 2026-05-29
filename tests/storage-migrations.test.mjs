@@ -25,10 +25,15 @@ const {
 const { applyMigrationV1 } = importTs(
 	"../src/infrastructure/storage/migrations/v1.ts",
 );
-const { V1_SCHEMA_VERSION } = importTs(
-	"../src/infrastructure/storage/migrations/v1-schema.ts",
-);
+const {
+	V1_SCHEMA_VERSION,
+	V1_QUERY_INDEX_SPECS,
+	applyV1SchemaDdl,
+} = importTs("../src/infrastructure/storage/migrations/v1-schema.ts");
 const TRACKS_TABLE = "tracks";
+const PLACES_TABLE = "places";
+const TRACK_PLACES_TABLE = "track_places";
+const NOTE_TRACK_LINKS_TABLE = "note_track_links";
 const { createNoopLoggerPort } = importTs(
 	"../src/infrastructure/logging/noop-logger-port.ts",
 );
@@ -59,6 +64,33 @@ function hasTable(db, name) {
 	return (result[0]?.values.length ?? 0) > 0;
 }
 
+function hasIndex(db, name) {
+	const result = db.exec(
+		`SELECT name FROM sqlite_master WHERE type = 'index' AND name = '${name}'`,
+	);
+	return (result[0]?.values.length ?? 0) > 0;
+}
+
+function indexTable(db, name) {
+	const result = db.exec(
+		`SELECT tbl_name FROM sqlite_master WHERE type = 'index' AND name = '${name}'`,
+	);
+	return result[0]?.values[0]?.[0] ?? null;
+}
+
+function indexColumns(db, name) {
+	const info = db.exec(`PRAGMA index_info('${name}')`);
+	return (info[0]?.values ?? []).map((row) => row[2]);
+}
+
+function assertV1QueryIndexes(db) {
+	for (const spec of V1_QUERY_INDEX_SPECS) {
+		assert.ok(hasIndex(db, spec.name), `missing index ${spec.name}`);
+		assert.equal(indexTable(db, spec.name), spec.table);
+		assert.deepEqual(indexColumns(db, spec.name), spec.columns);
+	}
+}
+
 test("storage migrations: fresh DB applies v1 once", async () => {
 	const { db } = await openDatabase();
 	const logger = createNoopLoggerPort();
@@ -67,6 +99,22 @@ test("storage migrations: fresh DB applies v1 once", async () => {
 	assert.equal(readIndexMetaSchemaVersion(db), V1_SCHEMA_VERSION);
 	assert.equal(LATEST_SCHEMA_VERSION, V1_SCHEMA_VERSION);
 	assert.ok(hasTable(db, TRACKS_TABLE));
+	assert.ok(hasTable(db, PLACES_TABLE));
+	assert.ok(hasTable(db, TRACK_PLACES_TABLE));
+	assert.ok(hasTable(db, NOTE_TRACK_LINKS_TABLE));
+	assertV1QueryIndexes(db);
+	db.close();
+});
+
+test("storage migrations: §6.1 query indexes are idempotent", async () => {
+	const { db } = await openDatabase();
+	const logger = createNoopLoggerPort();
+	runMigrations(db, logger);
+	assertV1QueryIndexes(db);
+	applyV1SchemaDdl(db);
+	assertV1QueryIndexes(db);
+	runMigrations(db, logger);
+	assertV1QueryIndexes(db);
 	db.close();
 });
 
@@ -77,6 +125,7 @@ test("storage migrations: repeat onload is no-op", async () => {
 	runMigrations(db, logger);
 	assert.equal(readVersion(db), V1_SCHEMA_VERSION);
 	assert.equal(readIndexMetaSchemaVersion(db), V1_SCHEMA_VERSION);
+	assertV1QueryIndexes(db);
 	db.close();
 });
 
@@ -91,6 +140,7 @@ test("storage migrations: export/import preserves v1 schema", async () => {
 	runMigrations(db2, logger);
 	assert.equal(readVersion(db2), V1_SCHEMA_VERSION);
 	assert.ok(hasTable(db2, TRACKS_TABLE));
+	assertV1QueryIndexes(db2);
 	db2.close();
 });
 
@@ -137,5 +187,6 @@ test("storage migrations: v1 failure inside transaction rolls back", async () =>
 	runMigrations(db, logger);
 	assert.equal(readVersion(db), V1_SCHEMA_VERSION);
 	assert.ok(hasTable(db, TRACKS_TABLE));
+	assertV1QueryIndexes(db);
 	db.close();
 });
