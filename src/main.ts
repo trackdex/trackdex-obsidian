@@ -17,7 +17,7 @@ export default class TrackdexPlugin extends Plugin implements TrackdexPluginHost
 
 	async onload(): Promise<void> {
 		await this.loadSettings();
-		this.container = createTrackdexContainer(this);
+		this.container = await createTrackdexContainer(this);
 		await bootstrapTrackdexPlugin(this, this.container);
 	}
 

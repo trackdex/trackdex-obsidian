@@ -11,7 +11,7 @@ import type { TrackListQuery } from "domain/track/track-query";
 import type { NewTrackRecord, TrackPath } from "domain/track/track-record";
 import type { TrackStatus } from "domain/track/track-status";
 
-/** In-memory no-op track repository until sql.js adapter (0.1-09 / 0.2). */
+/** In-memory no-op track repository until full sql.js CRUD (0.2). */
 export function createNoopTrackRepository(): TrackRepository {
 	return {
 		upsert: async () => {},

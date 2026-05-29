@@ -1,3 +1,4 @@
+import { Notice } from "obsidian";
 import type { ClockPort } from "application/ports/clock-port";
 import type { LoggerPort } from "application/ports/logger-port";
 import type { PerfMetricsPort } from "application/ports/metrics-port";
@@ -12,6 +13,10 @@ import { createNoopLoggerPort } from "../infrastructure/logging/noop-logger-port
 import { createNoopMetricsPort } from "../infrastructure/logging/noop-metrics-port";
 import { createSystemClockPort } from "../infrastructure/logging/system-clock-port";
 import { createNoopTrackParserPort } from "../infrastructure/parsers/noop-track-parser-port";
+import {
+	SqlStorageAdapter,
+	createSqlIndexMetaRepository,
+} from "../infrastructure/storage";
 import {
 	createNoopIndexMetaRepository,
 	createNoopNoteLinkRepository,
@@ -47,12 +52,12 @@ export interface TrackdexContainer {
 }
 
 /**
- * Assembles application ports with no-op infrastructure adapters.
- * Storage/parser production wiring: 0.1-09+; service facades: 0.1-08.
+ * Assembles application ports; opens sql.js storage and runs migrations on bootstrap.
+ * Track/place/link repositories remain no-op until milestone 0.2.
  */
-export function createTrackdexContainer(
-	_plugin: TrackdexPluginHost,
-): TrackdexContainer {
+export async function createTrackdexContainer(
+	plugin: TrackdexPluginHost,
+): Promise<TrackdexContainer> {
 	const disposers: Array<() => void> = [];
 
 	const logger = createNoopLoggerPort();
@@ -62,7 +67,26 @@ export function createTrackdexContainer(
 	const tracks = createNoopTrackRepository();
 	const places = createNoopPlaceRepository();
 	const noteLinks = createNoopNoteLinkRepository();
-	const indexMeta = createNoopIndexMetaRepository();
+
+	let indexMeta: IndexMetaRepository = createNoopIndexMetaRepository();
+	let storage: SqlStorageAdapter | null = null;
+
+	try {
+		storage = new SqlStorageAdapter(plugin);
+		await storage.open(logger);
+		indexMeta = createSqlIndexMetaRepository(storage);
+		disposers.push(() => {
+			void storage?.close();
+		});
+	} catch (err: unknown) {
+		const message = err instanceof Error ? err.message : String(err);
+		logger.error("storage: bootstrap failed", { error: message });
+		new Notice(
+			"Trackdex could not open the local track index. Catalog features are limited until you reload the plugin.",
+		);
+		await storage?.close();
+		storage = null;
+	}
 
 	const indexing = createIndexingService({ logger, indexMeta });
 	const placeReindex = createPlaceReindexService({ logger, places });

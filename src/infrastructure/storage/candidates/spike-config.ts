@@ -1,6 +1,6 @@
 /**
  * Storage spike gate (0.1-03). Keep `false` in committed builds so production
- * bootstrap does not bundle sql.js until 0.1-09.
+ * Production storage bootstrap uses sql.js via storage-adapter.ts (0.1-09).
  */
 export const ENABLE_STORAGE_SPIKE = false;
 
