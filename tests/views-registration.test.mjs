@@ -30,6 +30,27 @@ test("views: registerViews wires container in composition", () => {
 	assert.match(registerViews, /TrackView/);
 });
 
+test("views: registerViews routes track files to TrackView", () => {
+	const registerViews = readFileSync(
+		join(ROOT, "src/composition/register-views.ts"),
+		"utf8",
+	);
+	assert.match(registerViews, /registerExtensions/);
+	assert.match(registerViews, /TRACKDEX_REGISTERED_FILE_EXTENSIONS/);
+	assert.match(registerViews, /TRACKDEX_TRACK_VIEW_TYPE/);
+});
+
+test("views: track view shell layout for file-open", () => {
+	const trackView = readFileSync(
+		join(ROOT, "src/ui/views/track-view.ts"),
+		"utf8",
+	);
+	assert.match(trackView, /trackdex-track-view__layout/);
+	assert.match(trackView, /trackdex-track-view__map-column/);
+	assert.match(trackView, /trackdex-track-view__stats-placeholder/);
+	assert.match(trackView, /getTrackFileExtension/);
+});
+
 test("views: tracks sidebar shows interrupted-run banner wiring", () => {
 	const sidebar = readFileSync(
 		join(ROOT, "src/ui/views/tracks-sidebar-view.ts"),
