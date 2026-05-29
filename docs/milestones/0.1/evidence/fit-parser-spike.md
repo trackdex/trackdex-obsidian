@@ -31,8 +31,8 @@
 
 1. Set `ENABLE_FIT_PARSER_SPIKE = true` in [`src/infrastructure/parsers/candidates/spike-config.ts`](../../../src/infrastructure/parsers/candidates/spike-config.ts)
 2. `npm run build` and deploy plugin to vault
-3. Copy a `.fit` or `.fit.gz` track into the vault; open the file in Obsidian (active editor)
-4. Command palette → **Trackdex: Run FIT parser spike (FIT-file-parser)** (`fit-spike-smoke`)
+3. Copy a `.fit` or `.fit.gz` track into the vault (e.g. under `tracks/`). After rebuild, `.fit.gz` should appear in the file explorer (plugin registers `gz`; Obsidian only uses the last path segment as `TFile.extension`).
+4. Command palette → **Trackdex: Run FIT parser spike (FIT-file-parser)** (`fit-spike-smoke`) — with no file open, picks the only FIT file or shows a picker when several exist
 5. Note Notice: point count, lap count, parse ms
 6. Repeat with **Trackdex: Run FIT parser spike (garmin sdk)** (`fit-spike-garmin-sdk`)
 7. Reset `ENABLE_FIT_PARSER_SPIKE` to `false` before merge
@@ -54,8 +54,10 @@ Same steps 1–6 on Android/iOS with a small and a large FIT/FIT.GZ if available
 | Cold parse (~95 KB FIT) | ~29 ms | ~53 ms | Node 22, single run |
 | esbuild isolated bundle | **~0.13 MB** | **~0.31 MB** | `npm run measure-bundle` |
 | `npm run build` (spike off) | **PASS** | — | No parser deps in `main.js` |
-| Desktop Obsidian | **Not run** | **Not run** | See repro |
-| Android Obsidian | **Not run** | **Not run** | See repro |
+| Desktop Obsidian (fit-file-parser) | **PASS** | — | Real vault `.fit.gz` (1323–4744 pts) |
+| Android Obsidian (fit-file-parser) | **PASS** | — | Operator 2026-05-29 |
+| Desktop/Android (garmin-sdk) | — | **FAIL (expected)** | Same vault files: `compressed timestamp messages are not currently supported` in `@garmin-fit/sdk` |
+| Legacy MIT fixture only | **PASS** | **PASS** | `tests/fixtures/sample-activity.fit` (no compressed timestamps) |
 
 ---
 

@@ -4,6 +4,10 @@ export type {
 	TrackFileExtension,
 } from "domain/track/parsed-track";
 export { TRACK_FILE_EXTENSIONS } from "domain/track/parsed-track";
+export {
+	isFitTrackFileName,
+	matchTrackFileExtensionFromName,
+} from "domain/track/track-file-name";
 export type { TrackDataFlags } from "domain/track/track-data-flags";
 export type { NewTrackRecord, TrackPath, TrackRecord } from "domain/track/track-record";
 export type { TrackSegment } from "domain/track/track-segment";

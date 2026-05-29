@@ -198,7 +198,7 @@ export class TrackView extends TextFileView {
 
 	getEphemeralState(): Record<string, unknown> {
 		const state = super.getEphemeralState();
-		const mapView = this.getCurrentMapViewState();
+		const mapView = this.getCurrentMapViewState(state);
 		if (mapView) {
 			state.mapCenter = mapView.mapCenter;
 			state.mapZoom = mapView.mapZoom;
@@ -216,14 +216,19 @@ export class TrackView extends TextFileView {
 		}
 	}
 
-	private getCurrentMapViewState(): TrackMapViewState | null {
+	private getCurrentMapViewState(
+		fallbackState?: unknown,
+	): TrackMapViewState | null {
 		if (this.basemap) {
 			return getTrackMapViewState(this.basemap);
 		}
 		if (this.pendingMapView) {
 			return this.pendingMapView;
 		}
-		return this.readMapViewState(this.leaf.getEphemeralState());
+		if (fallbackState !== undefined) {
+			return this.readMapViewState(fallbackState);
+		}
+		return null;
 	}
 
 	private readMapViewState(state: unknown): TrackMapViewState | null {

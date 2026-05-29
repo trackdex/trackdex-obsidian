@@ -1,8 +1,10 @@
+import { isFitTrackFileName } from "domain/track/track-file-name";
 import { Notice, TFile, type Plugin } from "obsidian";
 import { gunzipFit } from "./gunzip";
 import { parseWithFitFileParser } from "./fit-file-parser-candidate";
 import { parseWithGarminSdk } from "./garmin-sdk-candidate";
 import type { FitSpikeParseResult } from "./fit-spike-types";
+import { resolveFitFileForSpike } from "./resolve-fit-spike-file";
 import {
 	DEFAULT_FIT_PARSER_SPIKE_BACKEND,
 	type FitParserSpikeBackend,
@@ -13,11 +15,6 @@ export interface RunFitParserSpikeOptions {
 	readonly vaultRelativePath?: string;
 }
 
-function isFitTrackFile(file: TFile): boolean {
-	const name = file.name.toLowerCase();
-	return name.endsWith(".fit") || name.endsWith(".fit.gz");
-}
-
 async function loadVaultFitBytes(
 	plugin: Plugin,
 	vaultRelativePath: string,
@@ -26,23 +23,17 @@ async function loadVaultFitBytes(
 	if (!(abstract instanceof TFile)) {
 		throw new Error(`File not found: ${vaultRelativePath}`);
 	}
-	if (!isFitTrackFile(abstract)) {
+	if (!isFitTrackFileName(abstract.name)) {
 		throw new Error(`Not a FIT track file: ${vaultRelativePath}`);
 	}
 	const buf = await plugin.app.vault.readBinary(abstract);
 	return { label: vaultRelativePath, bytes: new Uint8Array(buf) };
 }
 
-async function loadActiveFitBytes(
+async function loadResolvedFitBytes(
 	plugin: Plugin,
 ): Promise<{ label: string; bytes: Uint8Array }> {
-	const file = plugin.app.workspace.getActiveFile();
-	if (!file) {
-		throw new Error("Open a .fit or .fit.gz file, then run this command.");
-	}
-	if (!isFitTrackFile(file)) {
-		throw new Error(`Active file is not FIT: ${file.path}`);
-	}
+	const file = await resolveFitFileForSpike(plugin.app);
 	const buf = await plugin.app.vault.readBinary(file);
 	return { label: file.path, bytes: new Uint8Array(buf) };
 }
@@ -76,7 +67,7 @@ export async function runFitParserSpike(
 	const backend = options.backend ?? DEFAULT_FIT_PARSER_SPIKE_BACKEND;
 	let loaded = options.vaultRelativePath
 		? await loadVaultFitBytes(plugin, options.vaultRelativePath)
-		: await loadActiveFitBytes(plugin);
+		: await loadResolvedFitBytes(plugin);
 	const { label, bytes } = await maybeGunzip(loaded.label, loaded.bytes);
 	return parseBytes(backend, label, bytes);
 }

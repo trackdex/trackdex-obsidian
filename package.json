@@ -6,7 +6,7 @@
 	"type": "module",
 	"scripts": {
 		"dev": "node scripts/build.mjs",
-		"build": "tsc -noEmit -skipLibCheck && node scripts/build.mjs production",
+		"build": "tsc -noEmit -skipLibCheck && node scripts/build.mjs production && node --test tests/bundle-integrity.test.mjs",
 		"test": "node --test",
 		"measure-bundle": "node scripts/measure-bundle.mjs",
 		"deploy": "node scripts/deploy.mjs",

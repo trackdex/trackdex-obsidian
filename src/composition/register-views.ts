@@ -1,5 +1,5 @@
 import {
-	TRACKDEX_TRACK_FILE_EXTENSIONS,
+	TRACKDEX_REGISTERED_FILE_EXTENSIONS,
 	TRACKDEX_TRACK_VIEW_TYPE,
 	TRACKDEX_TRACKS_SIDEBAR_VIEW_TYPE,
 } from "../constants";
@@ -18,7 +18,7 @@ export function registerViews(
 		(leaf) => new TrackView(leaf, plugin, container.trackQuery),
 	);
 	plugin.registerExtensions(
-		[...TRACKDEX_TRACK_FILE_EXTENSIONS],
+		[...TRACKDEX_REGISTERED_FILE_EXTENSIONS],
 		TRACKDEX_TRACK_VIEW_TYPE,
 	);
 

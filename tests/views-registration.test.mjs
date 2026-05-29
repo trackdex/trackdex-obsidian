@@ -13,7 +13,8 @@ test("views: track and sidebar view type constants", () => {
 	assert.match(constants, /"gpx"/);
 	assert.match(constants, /"tcx"/);
 	assert.match(constants, /"fit"/);
-	assert.match(constants, /"fit\.gz"/);
+	assert.match(constants, /"gz"/);
+	assert.match(constants, /TRACKDEX_REGISTERED_FILE_EXTENSIONS/);
 });
 
 test("views: registerViews wires container in composition", () => {

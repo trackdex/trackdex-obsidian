@@ -29,7 +29,7 @@ export function registerFitParserSpikeCommand(plugin: Plugin): void {
 
 	plugin.addCommand({
 		id: "fit-spike-garmin-sdk",
-		name: "Run FIT parser spike (garmin sdk)",
+		name: "Run FIT parser spike (garmin sdk, reference)",
 		callback: async () => {
 			try {
 				const result = await runFitParserSpike(plugin, {

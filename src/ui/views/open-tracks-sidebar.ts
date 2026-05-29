@@ -7,7 +7,7 @@ export async function openTracksSidebar(app: App): Promise<WorkspaceLeaf> {
 	const existing = workspace.getLeavesOfType(TRACKDEX_TRACKS_SIDEBAR_VIEW_TYPE);
 	if (existing.length > 0) {
 		const leaf = existing[0]!;
-		workspace.revealLeaf(leaf);
+		await workspace.revealLeaf(leaf);
 		return leaf;
 	}
 
@@ -17,6 +17,6 @@ export async function openTracksSidebar(app: App): Promise<WorkspaceLeaf> {
 		type: TRACKDEX_TRACKS_SIDEBAR_VIEW_TYPE,
 		active: true,
 	});
-	workspace.revealLeaf(leaf);
+	await workspace.revealLeaf(leaf);
 	return leaf;
 }

@@ -5,6 +5,17 @@ import {
 } from "./map-to-parsed-track";
 import type { FitSpikeParseResult } from "./fit-spike-types";
 
+function formatGarminDecoderErrors(errors: readonly unknown[]): string {
+	const joined = errors.map((e) => String(e)).join("; ");
+	if (/compressed timestamp/i.test(joined)) {
+		return (
+			`${joined} — Garmin SDK does not support compressed-timestamp FIT ` +
+			"(common on recent Garmin exports). v1 uses fit-file-parser; this spike is reference-only."
+		);
+	}
+	return joined;
+}
+
 export async function parseWithGarminSdk(
 	sourceLabel: string,
 	bytes: Uint8Array,
@@ -28,7 +39,7 @@ export async function parseWithGarminSdk(
 				backend,
 				sourceLabel,
 				ok: false,
-				message: `Decoder errors: ${errors.map((e) => String(e)).join("; ")}`,
+				message: `Decoder errors: ${formatGarminDecoderErrors(errors)}`,
 			};
 		}
 		const sample = mapGarminSdkToParsedTrack(messages);

@@ -36,6 +36,10 @@ export default tseslint.config(
 	]),
 	{
 		files: ["**/*.ts", "**/*.tsx"],
+		settings: {
+			// baseUrl imports (src/domain/...) must not match Node's "domain" builtin.
+			"import/internal-regex": "^domain/",
+		},
 		plugins: {
 			obsidianmd,
 		},
