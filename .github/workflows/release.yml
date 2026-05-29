@@ -48,6 +48,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create release discussion
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ github.ref_name }}
@@ -101,12 +102,12 @@ jobs:
           REPO_ID="$(echo "${REPO_DATA}" | jq -r '.data.repository.id')"
           CATEGORY_ID="$(echo "${REPO_DATA}" | jq -r '
             .data.repository.discussionCategories.nodes
-            | (map(select(.name == "Announcements"))[0].id)
-              // map(select(.name == "General"))[0].id)
+            | (map(select(.name == "General"))[0].id)
+              // map(select(.name == "Announcements"))[0].id)
           ')"
 
           if [ -z "${CATEGORY_ID}" ] || [ "${CATEGORY_ID}" = "null" ]; then
-            echo "No suitable discussion category found (expected Announcements or General)."
+            echo "No suitable discussion category found (expected General or Announcements)."
             exit 1
           fi
 
