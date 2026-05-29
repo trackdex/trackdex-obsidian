@@ -36,8 +36,8 @@ export const ru: MessagesSchema = {
 			"Пока нет проиндексированных треков. Здесь появится прогресс индексации.",
 		trackStatsPlaceholder:
 			"Панель статистики (этап 0.5). Проиндексировано треков: {count}.",
-		trackMobileTabsHint:
-			"На мобильных карта и статистика будут во вкладках.",
+		trackMobileTabMap: "Карта",
+		trackMobileTabStats: "Статистика",
 		trackPreviewComingSoon:
 			"Предпросмотр карты для этого формата скоро появится.",
 	},

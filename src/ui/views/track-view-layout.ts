@@ -1,9 +1,16 @@
 /** Desktop track view uses a row split at this width (px); mobile stacks below. */
 export const TRACK_VIEW_DESKTOP_MIN_WIDTH_PX = 769;
 
+export type MobileTab = "map" | "stats";
+
 export const TRACK_VIEW_LAYOUT_CLASSES = {
 	root: "trackdex-track-view",
+	mobileTabs: "trackdex-track-view__mobile-tabs",
+	mobileTab: "trackdex-track-view__mobile-tab",
+	mobileTabActive: "trackdex-track-view__mobile-tab--active",
 	layout: "trackdex-track-view__layout",
+	layoutTabMap: "trackdex-track-view__layout--tab-map",
+	layoutTabStats: "trackdex-track-view__layout--tab-stats",
 	mapColumn: "trackdex-track-view__map-column",
 	statsColumn: "trackdex-track-view__stats-column",
 	statsPlaceholder: "trackdex-track-view__stats-placeholder",
@@ -13,6 +20,9 @@ export const TRACK_VIEW_LAYOUT_CLASSES = {
 } as const;
 
 export interface TrackViewLayoutElements {
+	mobileTabsEl: HTMLElement;
+	mapTabButton: HTMLButtonElement;
+	statsTabButton: HTMLButtonElement;
 	layoutEl: HTMLElement;
 	mapColumnEl: HTMLElement;
 	statsColumnEl: HTMLElement;
@@ -22,16 +32,44 @@ export interface TrackViewLayoutElements {
 	mapErrorEl: HTMLElement;
 }
 
+export interface TrackViewLayoutTabLabels {
+	map: string;
+	stats: string;
+}
+
 /** Builds map-left / stats-right DOM shell (stats content filled by the view). */
 export function buildTrackViewLayout(
 	contentEl: HTMLElement,
+	activeMobileTab: MobileTab,
+	tabLabels: TrackViewLayoutTabLabels,
 ): TrackViewLayoutElements {
 	const c = TRACK_VIEW_LAYOUT_CLASSES;
 
 	contentEl.empty();
 	contentEl.addClass(c.root);
 
-	const layoutEl = contentEl.createDiv({cls: c.layout});
+	const mobileTabsEl = contentEl.createDiv({
+		cls: c.mobileTabs,
+		attr: {role: "tablist"},
+	});
+
+	const mapTabButton = mobileTabsEl.createEl("button", {
+		cls: c.mobileTab,
+		type: "button",
+		text: tabLabels.map,
+	});
+	mapTabButton.setAttribute("role", "tab");
+
+	const statsTabButton = mobileTabsEl.createEl("button", {
+		cls: c.mobileTab,
+		type: "button",
+		text: tabLabels.stats,
+	});
+	statsTabButton.setAttribute("role", "tab");
+
+	const layoutEl = contentEl.createDiv({
+		cls: `${c.layout} ${activeMobileTab === "map" ? c.layoutTabMap : c.layoutTabStats}`,
+	});
 
 	const mapColumnEl = layoutEl.createDiv({cls: c.mapColumn});
 	const mapWrapEl = mapColumnEl.createDiv({cls: c.mapWrap});
@@ -43,6 +81,9 @@ export function buildTrackViewLayout(
 	const statsPlaceholderEl = statsColumnEl.createDiv({cls: c.statsPlaceholder});
 
 	return {
+		mobileTabsEl,
+		mapTabButton,
+		statsTabButton,
 		layoutEl,
 		mapColumnEl,
 		statsColumnEl,

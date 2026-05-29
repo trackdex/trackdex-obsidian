@@ -35,7 +35,8 @@ export const en = {
 		tracksSidebarEmpty: "No indexed tracks yet. Indexing progress will appear here.",
 		trackStatsPlaceholder:
 			"Stats panel (milestone 0.5). Indexed tracks: {count}.",
-		trackMobileTabsHint: "On mobile, map and stats will use tabs.",
+		trackMobileTabMap: "Map",
+		trackMobileTabStats: "Stats",
 		trackPreviewComingSoon: "Map preview for this format is coming soon.",
 	},
 } as const;
