@@ -6,6 +6,26 @@ Read-only catalog of GPX tracks in your Obsidian vault: browse files, view track
 
 Copy `manifest.json`, `main.js`, and `styles.css` to `.obsidian/plugins/trackdex-obsidian/` in your vault, then enable the plugin in **Settings → Community plugins**.
 
+## Plugin data (local storage)
+
+Trackdex keeps its index and logs under the Obsidian plugin data directory (not in your note files):
+
+| Artifact | Path (relative to vault root) |
+| --- | --- |
+| Plugin data dir | `.obsidian/plugins/trackdex-obsidian/` |
+| Track index (SQLite) | `.obsidian/plugins/trackdex-obsidian/index.sqlite` |
+| Indexing logs | `.obsidian/plugins/trackdex-obsidian/logs/` |
+
+The active log file is `trackdex.log`. When it reaches 1 MB, it rotates to `trackdex.log.1`, then `trackdex.log.2`, and so on, keeping at most **5 files × 1 MB** (~5 MB total). Older segments are deleted. Logs are JSON lines on disk only; the plugin does not upload them.
+
+### Vault sync
+
+The plugin data directory may be included in vault sync (Obsidian Sync, git, Dropbox, etc.) depending on your setup. Trackdex does not automatically exclude `index.sqlite` or logs from sync.
+
+- **Single writer:** Treat `index.sqlite` as one device at a time. Concurrent writes from two devices (for example two desktops syncing the same vault) can corrupt SQLite. On a new device, expect to reindex rather than merge index files.
+- **Sync traffic:** The index grows with your GPX catalog; logs are capped by rotation but still sync if the plugin folder syncs.
+- **Backups:** Include `.obsidian/plugins/trackdex-obsidian/` in vault backups if you want to preserve the index; deleting that folder forces a full reindex.
+
 ## Development
 
 ```bash
