@@ -1,11 +1,19 @@
+import {
+	isVaultPathExcluded,
+	resolveScanExcludePatterns,
+	type ScanExcludePattern,
+} from "application/indexing/exclude-matcher";
 import type {
 	DiscoveredTrackFile,
 	VaultScannerPort,
 } from "application/ports/vault-scanner-port";
 import { normalizeVaultRelativePath } from "domain/shared/vault-path";
 import { matchTrackFileExtensionFromName } from "domain/track/track-file-name";
-import type { TrackPath } from "domain/track/track-record";
 import type { App, TFile } from "obsidian";
+
+export interface ListTrackFilesOptions {
+	readonly scanExcludePatterns?: readonly ScanExcludePattern[];
+}
 
 /** Minimal file shape for unit tests and Obsidian adapter input. */
 export interface VaultFileCandidate {
@@ -18,15 +26,22 @@ export interface VaultFileCandidate {
  */
 export function listTrackFilesFromCandidates(
 	files: readonly VaultFileCandidate[],
+	options?: ListTrackFilesOptions,
 ): readonly DiscoveredTrackFile[] {
+	const excludePatterns = resolveScanExcludePatterns(
+		options?.scanExcludePatterns,
+	);
 	const discovered: DiscoveredTrackFile[] = [];
 
 	for (const file of files) {
+		const path = normalizeVaultRelativePath(file.path);
+		if (isVaultPathExcluded(path, excludePatterns)) {
+			continue;
+		}
 		const extension = matchTrackFileExtensionFromName(file.name);
 		if (!extension) {
 			continue;
 		}
-		const path: TrackPath = normalizeVaultRelativePath(file.path);
 		discovered.push({ path, extension });
 	}
 
@@ -34,7 +49,17 @@ export function listTrackFilesFromCandidates(
 	return discovered;
 }
 
-export function createObsidianVaultScanner(app: App): VaultScannerPort {
+export interface ObsidianVaultScannerOptions {
+	readonly scanExcludePatterns?: readonly ScanExcludePattern[];
+}
+
+export function createObsidianVaultScanner(
+	app: App,
+	options?: ObsidianVaultScannerOptions,
+): VaultScannerPort {
+	const listOptions: ListTrackFilesOptions = {
+		scanExcludePatterns: options?.scanExcludePatterns,
+	};
 	return {
 		listTrackFiles(): Promise<readonly DiscoveredTrackFile[]> {
 			const candidates = app.vault
@@ -43,7 +68,9 @@ export function createObsidianVaultScanner(app: App): VaultScannerPort {
 					path: file.path,
 					name: file.name,
 				}));
-			return Promise.resolve(listTrackFilesFromCandidates(candidates));
+			return Promise.resolve(
+				listTrackFilesFromCandidates(candidates, listOptions),
+			);
 		},
 	};
 }

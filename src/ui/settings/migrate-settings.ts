@@ -11,7 +11,18 @@ export type MigrateSettingsResult = {
 	strippedLegacy: boolean;
 };
 
-/** Strips prototype keys from saved JSON; returns empty v1 settings. */
+function readScanExcludePatterns(
+	raw: Record<string, unknown> | null,
+): string[] {
+	if (raw == null || !Array.isArray(raw.scanExcludePatterns)) {
+		return [...DEFAULT_SETTINGS.scanExcludePatterns];
+	}
+	return raw.scanExcludePatterns.filter(
+		(entry): entry is string => typeof entry === "string",
+	);
+}
+
+/** Strips prototype keys from saved JSON; preserves known v1 settings fields. */
 export function migrateSettings(
 	raw: Record<string, unknown> | null,
 ): MigrateSettingsResult {
@@ -21,7 +32,10 @@ export function migrateSettings(
 			Object.prototype.hasOwnProperty.call(raw, key),
 		);
 	return {
-		settings: Object.assign({}, DEFAULT_SETTINGS),
+		settings: {
+			...DEFAULT_SETTINGS,
+			scanExcludePatterns: readScanExcludePatterns(raw),
+		},
 		strippedLegacy,
 	};
 }

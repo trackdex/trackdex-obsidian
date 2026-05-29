@@ -21,3 +21,11 @@ test("migrateSettings leaves clean JSON unchanged", () => {
 	assert.deepEqual(settings, DEFAULT_SETTINGS);
 	assert.equal(strippedLegacy, false);
 });
+
+test("migrateSettings preserves scanExcludePatterns from saved data", () => {
+	const {settings, strippedLegacy} = migrateSettings({
+		scanExcludePatterns: ["archive/**", 42, "drafts/*"],
+	});
+	assert.deepEqual(settings.scanExcludePatterns, ["archive/**", "drafts/*"]);
+	assert.equal(strippedLegacy, false);
+});

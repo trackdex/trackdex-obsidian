@@ -9,7 +9,7 @@ export interface DiscoveredTrackFile {
 
 /**
  * Recursively discovers `.gpx`, `.tcx`, `.fit`, and `.fit.gz` in the vault.
- * Excludes and parsing are handled by later pipeline stages.
+ * Applies default and settings-driven exclude patterns; parsing is a later stage.
  */
 export interface VaultScannerPort {
 	listTrackFiles(): Promise<readonly DiscoveredTrackFile[]>;

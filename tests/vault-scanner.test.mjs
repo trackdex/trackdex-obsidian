@@ -27,6 +27,8 @@ const FIXTURE_VAULT_FILES = [
 	{ path: "notes/journal.md", name: "journal.md" },
 	{ path: "archive/4074711732.gpx.gz", name: "4074711732.gpx.gz" },
 	{ path: ".obsidian/plugins/trackdex/data.json", name: "data.json" },
+	{ path: ".obsidian/hidden.gpx", name: "hidden.gpx" },
+	{ path: ".trash/deleted.tcx", name: "deleted.tcx" },
 ];
 
 test("vault scanner: fixture listing finds all v1 track extensions", () => {
@@ -60,6 +62,38 @@ test("vault scanner: case variants on extension suffix", () => {
 	assert.deepEqual(
 		found.map((f) => f.extension),
 		["gpx", "tcx", "fit", "fit.gz"],
+	);
+});
+
+test("vault scanner: default excludes skip .obsidian and .trash tracks", () => {
+	const found = listTrackFilesFromCandidates(FIXTURE_VAULT_FILES);
+
+	assert.equal(
+		found.some((f) => f.path.startsWith(".obsidian/")),
+		false,
+	);
+	assert.equal(
+		found.some((f) => f.path.startsWith(".trash/")),
+		false,
+	);
+});
+
+test("vault scanner: user exclude patterns apply with defaults", () => {
+	const found = listTrackFilesFromCandidates(
+		[
+			...FIXTURE_VAULT_FILES,
+			{ path: "archive/retired.gpx", name: "retired.gpx" },
+		],
+		{ scanExcludePatterns: ["archive/**"] },
+	);
+
+	assert.equal(
+		found.some((f) => f.path === "archive/retired.gpx"),
+		false,
+	);
+	assert.equal(
+		found.some((f) => f.path === "tracks/alpha.gpx"),
+		true,
 	);
 });
 
