@@ -441,6 +441,11 @@
 	pointer-events: none;
 }
 
+.trackdex-track-stub__attribution-host {
+	flex-shrink: 0;
+	min-height: 0;
+}
+
 .trackdex-track-stub__attribution {
 	flex-shrink: 0;
 	margin: 0.5rem 0 0;
@@ -449,6 +454,39 @@
 	line-height: 1.4;
 }
 
-.trackdex-track-stub__attribution a {
+.trackdex-track-stub__attribution-tiles {
+	margin: 0 0 0.25rem;
+}
+
+.trackdex-track-stub__attribution-tiles[hidden] {
+	display: none;
+}
+
+.trackdex-track-stub__attribution-tiles a,
+.trackdex-track-stub__attribution-legal a {
 	text-decoration: underline;
+	cursor: pointer;
+}
+
+.trackdex-track-stub__attribution-legal {
+	margin: 0;
+}
+
+.trackdex-settings__legal {
+	margin-top: 1.25rem;
+	padding-top: 1rem;
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+.trackdex-settings__legal h3 {
+	font-size: var(--font-ui-medium);
+	font-weight: var(--font-semibold);
+	margin: 0 0 0.5rem;
+}
+
+.trackdex-settings__legal p {
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	line-height: 1.5;
+	margin: 0 0 0.5rem;
 }

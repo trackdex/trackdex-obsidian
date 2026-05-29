@@ -1,5 +1,9 @@
 import {debounce, TextFileView, type TFile, WorkspaceLeaf} from "obsidian";
-import {DEFAULT_BASEMAP_TILE_URL, TRACKDEX_TRACK_VIEW_TYPE} from "../../constants";
+import {
+	DEFAULT_BASEMAP_ATTRIBUTION,
+	DEFAULT_BASEMAP_TILE_URL,
+	TRACKDEX_TRACK_VIEW_TYPE,
+} from "../../constants";
 import {
 	createTrackBasemap,
 	destroyTrackBasemap,
@@ -31,6 +35,11 @@ import {
 	syncViewHeaderTitle,
 } from "../components/file-view-nav";
 import {preserveSettingsFocus} from "../components/preserve-settings-focus";
+import {openPluginSettings} from "../components/open-plugin-settings";
+import {
+	renderTrackMapAttribution,
+	type TrackMapAttributionHandle,
+} from "../components/track-map-attribution";
 import {
 	renderTrackStatsPanel,
 	type TrackStatsPanelHandle,
@@ -52,6 +61,9 @@ export class TrackView extends TextFileView {
 	private mapWrapEl: HTMLElement | null = null;
 	private mapErrorEl: HTMLElement | null = null;
 	private mapOfflineNoticeEl: HTMLElement | null = null;
+	private mapAttributionHostEl: HTMLElement | null = null;
+	private mapAttribution: TrackMapAttributionHandle | null = null;
+	private mapReady = false;
 	private tileStatusMonitor: TrackTileStatusMonitor | null = null;
 	private mapInitGeneration = 0;
 	private isClosing = false;
@@ -325,6 +337,8 @@ export class TrackView extends TextFileView {
 		this.mapContainerEl = built.mapContainerEl;
 		this.mapErrorEl = built.mapErrorEl;
 		this.mapOfflineNoticeEl = built.mapOfflineNoticeEl;
+		this.mapAttributionHostEl = built.mapAttributionHostEl;
+		this.renderMapAttribution();
 
 		this.registerDomEvent(this.mapTabButton, "click", () =>
 			this.setMobileTab("map"),
@@ -432,6 +446,8 @@ export class TrackView extends TextFileView {
 				if (this.isClosing || !this.basemap) {
 					return;
 				}
+				this.mapReady = true;
+				this.syncMapAttribution();
 				this.mapErrorEl?.hide();
 				this.renderTrackRoute();
 				this.scheduleMapResize();
@@ -478,9 +494,34 @@ export class TrackView extends TextFileView {
 		if (unavailable) {
 			this.mapOfflineNoticeEl.setText(t("views.trackMapTilesOffline"));
 			this.mapOfflineNoticeEl.show();
+		} else {
+			this.mapOfflineNoticeEl.hide();
+		}
+		this.syncMapAttribution();
+	}
+
+	private renderMapAttribution(): void {
+		this.mapAttribution?.dispose();
+		this.mapAttribution = null;
+		if (!this.mapAttributionHostEl || this.isClosing) {
 			return;
 		}
-		this.mapOfflineNoticeEl.hide();
+		this.mapAttribution = renderTrackMapAttribution({
+			container: this.mapAttributionHostEl,
+			tileAttributionHtml: DEFAULT_BASEMAP_ATTRIBUTION,
+			onOpenSettings: () => {
+				void openPluginSettings(this.app, this.plugin.manifest.id);
+			},
+			bindClick: (el, handler) => this.registerDomEvent(el, "click", handler),
+		});
+		this.syncMapAttribution();
+	}
+
+	private syncMapAttribution(): void {
+		const tilesUnavailable = this.tileStatusMonitor?.tilesUnavailable ?? false;
+		this.mapAttribution?.sync({
+			showTileAttribution: this.mapReady && !tilesUnavailable,
+		});
 	}
 
 	private renderTrackRoute(): void {
@@ -580,6 +621,9 @@ export class TrackView extends TextFileView {
 
 	private teardownMap(): void {
 		this.mapInitGeneration++;
+		this.mapReady = false;
+		this.mapAttribution?.dispose();
+		this.mapAttribution = null;
 		this.tileStatusMonitor?.destroy();
 		this.tileStatusMonitor = null;
 		this.onMapRefresh.cancel();
@@ -593,6 +637,7 @@ export class TrackView extends TextFileView {
 		this.mapWrapEl = null;
 		this.mapErrorEl = null;
 		this.mapOfflineNoticeEl = null;
+		this.mapAttributionHostEl = null;
 		this.layoutEl = null;
 		this.mobileTabsEl = null;
 		this.mapTabButton = null;

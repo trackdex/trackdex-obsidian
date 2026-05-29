@@ -19,5 +19,11 @@ export class TrackdexSettingTab extends PluginSettingTab {
 		const {containerEl} = this;
 		containerEl.empty();
 		containerEl.createEl("p", {text: t("settings.comingSoon")});
+
+		const legalSection = containerEl.createDiv({cls: "trackdex-settings__legal"});
+		legalSection.createEl("h3", {text: t("settings.legalTitle")});
+		legalSection.createEl("p", {text: t("settings.legalTileNetwork")});
+		legalSection.createEl("p", {text: t("settings.legalOfflineFirst")});
+		legalSection.createEl("p", {text: t("settings.legalLogsLocal")});
 	}
 }

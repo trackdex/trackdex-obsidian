@@ -12,6 +12,13 @@ export const ru: MessagesSchema = {
 	},
 	settings: {
 		comingSoon: "Настройки Trackdex появятся в следующих этапах.",
+		legalTitle: "Правовая информация и конфиденциальность",
+		legalTileNetwork:
+			"При просмотре трека на карте Trackdex может запрашивать растровые тайлы у OpenStreetMap. Это передаёт примерную область карты на сервер тайлов.",
+		legalOfflineFirst:
+			"Trackdex работает офлайн для индексации и данных треков. Тайлы карты требуют сети.",
+		legalLogsLocal:
+			"Логи индексации хранятся только локально в папке данных плагина и никуда не отправляются.",
 	},
 	common: {
 		notImplementedYet: "Пока не реализовано",
@@ -71,5 +78,9 @@ export const ru: MessagesSchema = {
 		trackSegmentDuration: "Длительность",
 		trackSegmentDistance: "Дистанция",
 		trackSegmentPointCount: "Точки",
+		trackMapAttributionLegalBeforeLink:
+			"При наличии сети тайлы карты могут загружаться с OpenStreetMap. ",
+		trackMapAttributionLegalLink: "Правовая информация и конфиденциальность",
+		trackMapAttributionLegalAfterLink: " — в настройках.",
 	},
 };

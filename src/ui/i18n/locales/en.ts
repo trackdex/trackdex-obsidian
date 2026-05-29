@@ -12,6 +12,13 @@ export const en = {
 	},
 	settings: {
 		comingSoon: "Trackdex settings will be available in a later milestone.",
+		legalTitle: "Legal and privacy",
+		legalTileNetwork:
+			"When you view a track on the map, Trackdex may request raster map tiles from OpenStreetMap. This sends your approximate map viewport to the tile server.",
+		legalOfflineFirst:
+			"Trackdex is offline-first for indexing and track data. Map tiles require network access.",
+		legalLogsLocal:
+			"Indexing logs are stored locally in the plugin data folder only; they are not sent elsewhere.",
 	},
 	common: {
 		notImplementedYet: "Not implemented yet",
@@ -68,6 +75,10 @@ export const en = {
 		trackSegmentDuration: "Duration",
 		trackSegmentDistance: "Distance",
 		trackSegmentPointCount: "Points",
+		trackMapAttributionLegalBeforeLink:
+			"Map tiles may load from OpenStreetMap when online. ",
+		trackMapAttributionLegalLink: "Privacy and legal info",
+		trackMapAttributionLegalAfterLink: " in settings.",
 	},
 } as const;
 

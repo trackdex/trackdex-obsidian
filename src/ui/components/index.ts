@@ -14,7 +14,14 @@ export {
 	syncViewHeaderTitle,
 	type FileViewNav,
 } from "./file-view-nav";
+export {openPluginSettings} from "./open-plugin-settings";
 export {preserveSettingsFocus} from "./preserve-settings-focus";
+export {
+	renderTrackMapAttribution,
+	type TrackMapAttributionHandle,
+	type TrackMapAttributionState,
+	type RenderTrackMapAttributionOptions,
+} from "./track-map-attribution";
 export {
 	renderTrackStatsPanel,
 	type TrackStatsPanelHandle,

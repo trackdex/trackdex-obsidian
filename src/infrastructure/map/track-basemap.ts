@@ -55,6 +55,7 @@ export function createTrackBasemap(
 		center,
 		zoom,
 		zoomControl: false,
+		attributionControl: false,
 		scrollWheelZoom: true,
 	});
 

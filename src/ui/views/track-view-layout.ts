@@ -18,6 +18,7 @@ export const TRACK_VIEW_LAYOUT_CLASSES = {
 	map: "trackdex-track-stub__map",
 	mapError: "trackdex-track-stub__map-error",
 	mapOfflineNotice: "trackdex-track-stub__map-offline-notice",
+	mapAttribution: "trackdex-track-stub__attribution-host",
 } as const;
 
 export interface TrackViewLayoutElements {
@@ -32,6 +33,7 @@ export interface TrackViewLayoutElements {
 	mapContainerEl: HTMLElement;
 	mapErrorEl: HTMLElement;
 	mapOfflineNoticeEl: HTMLElement;
+	mapAttributionHostEl: HTMLElement;
 }
 
 export interface TrackViewLayoutTabLabels {
@@ -80,6 +82,7 @@ export function buildTrackViewLayout(
 	mapOfflineNoticeEl.hide();
 	const mapErrorEl = mapWrapEl.createDiv({cls: c.mapError});
 	mapErrorEl.hide();
+	const mapAttributionHostEl = mapColumnEl.createDiv({cls: c.mapAttribution});
 
 	const statsColumnEl = layoutEl.createDiv({cls: c.statsColumn});
 	const statsPanelHostEl = statsColumnEl.createDiv({cls: c.statsPanelHost});
@@ -96,5 +99,6 @@ export function buildTrackViewLayout(
 		mapContainerEl,
 		mapErrorEl,
 		mapOfflineNoticeEl,
+		mapAttributionHostEl,
 	};
 }
