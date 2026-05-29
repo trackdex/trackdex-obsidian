@@ -317,7 +317,7 @@ export class TrackView extends TextFileView {
 		}
 
 		const generation = ++this.mapInitGeneration;
-		const tileUrl = this.getBasemapTileUrl();
+		const tileUrl = DEFAULT_BASEMAP_TILE_URL;
 
 		requestAnimationFrame(() => {
 			if (
@@ -342,14 +342,6 @@ export class TrackView extends TextFileView {
 			);
 		} catch {
 			this.statsPlaceholderEl.setText(t("views.trackStatsPlaceholder", {count: 0}));
-		}
-	}
-
-	private getBasemapTileUrl(): string {
-		try {
-			return this.plugin.settings.basemapTileUrl;
-		} catch {
-			return DEFAULT_BASEMAP_TILE_URL;
 		}
 	}
 
@@ -378,7 +370,7 @@ export class TrackView extends TextFileView {
 				if (!this.tileErrorNoticeShown && this.tileErrorCount >= 5) {
 					this.tileErrorNoticeShown = true;
 					new Notice(
-						"Some map tiles failed to load. Check your network or basemap URL in settings.",
+						"Some map tiles failed to load. Check your network connection.",
 					);
 				}
 			});

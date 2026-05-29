@@ -18,12 +18,12 @@ test("normalizeLocaleTag maps ru variants and falls back to en", () => {
 
 test("createTranslator returns RU strings for ru locale", () => {
 	const tr = createTranslator("ru");
-	assert.equal(tr("commands.openOverview"), "Открыть обзор");
+	assert.equal(tr("commands.openTracksSidebar"), "Открыть каталог треков");
 });
 
 test("createTranslator falls back to EN then key for missing entries", () => {
 	const tr = createTranslator("en");
-	assert.equal(tr("commands.openOverview"), "Open overview");
+	assert.equal(tr("commands.openTracksSidebar"), "Open track catalog");
 	assert.equal(tr("commands.nonexistentKey"), "commands.nonexistentKey");
 });
 

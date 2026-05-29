@@ -29,7 +29,7 @@ Prototype code moved in 0.1-01: track view and registration (`ui/views/`), setti
 
 Outside layers (unchanged): `src/constants.ts`, `src/styles/track-view.css`.
 
-Legacy prototype settings and demo commands remain until milestone **0.1-13**. No legacy re-export shims (`src/map`, `src/parsers`, etc.) — imports use the paths above.
+Prototype settings and demo commands were removed in **0.1-13**; v1 settings UI is planned for milestone **0.9**. No legacy re-export shims (`src/map`, `src/parsers`, etc.) — imports use the paths above.
 
 ## npm scripts
 

@@ -8,18 +8,10 @@ export const en = {
 		editCurrentPlaceGeometry: "Edit current place geometry",
 		pauseIndexing: "Pause indexing",
 		resetRebuildIndex: "Reset and rebuild index",
-		openOverview: "Open overview",
-		insertMarker: "Insert marker",
-		scanTracksFolder: "Scan tracks folder",
 		openTracksSidebar: "Open track catalog",
 	},
 	settings: {
-		tracksFolderName: "Tracks folder",
-		tracksFolderDesc: "Folder with GPX files inside your vault",
-		basemapTileUrlName: "Basemap tile URL",
-		basemapTileUrlDesc:
-			"Raster tile template with {z}, {x}, {y} (default: OpenStreetMap). " +
-			"MapLibre/OpenFreeMap style URLs are not supported in Obsidian.",
+		comingSoon: "Trackdex settings will be available in a later milestone.",
 	},
 	common: {
 		notImplementedYet: "Not implemented yet",

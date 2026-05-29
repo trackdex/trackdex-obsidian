@@ -29,9 +29,12 @@ export default class TrackdexPlugin extends Plugin implements TrackdexPluginHost
 	}
 
 	async loadSettings(): Promise<void> {
-		this.settings = migrateSettings(
-			(await this.loadData()) as Partial<TrackdexSettings> | null,
-		);
+		const raw = (await this.loadData()) as Record<string, unknown> | null;
+		const {settings, strippedLegacy} = migrateSettings(raw);
+		this.settings = settings;
+		if (strippedLegacy) {
+			await this.saveSettings();
+		}
 	}
 
 	async saveSettings(): Promise<void> {

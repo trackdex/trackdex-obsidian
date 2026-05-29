@@ -1,6 +1,4 @@
-import {Editor, MarkdownView, Notice} from "obsidian";
 import {registerTrackdexCommands} from "../infrastructure/obsidian/commands-registry";
-import {TrackdexOverviewModal} from "../ui/components/trackdex-overview-modal";
 import {t} from "../ui/i18n";
 import {TrackdexSettingTab} from "../ui/settings/settings-tab";
 import {openTracksSidebar} from "../ui/views/open-tracks-sidebar";
@@ -21,46 +19,13 @@ export async function bootstrapTrackdexPlugin(
 	});
 
 	const statusBarItemEl = plugin.addStatusBarItem();
-	statusBarItemEl.setText("Trackdex: ready");
-
-	plugin.addCommand({
-		id: "open-trackdex-overview",
-		name: t("commands.openOverview"),
-		callback: () => {
-			new TrackdexOverviewModal(plugin.app).open();
-		},
-	});
+	statusBarItemEl.setText("Trackdex");
 
 	plugin.addCommand({
 		id: "open-tracks-sidebar",
 		name: t("commands.openTracksSidebar"),
 		callback: () => {
 			void openTracksSidebar(plugin.app);
-		},
-	});
-
-	plugin.addCommand({
-		id: "insert-trackdex-tag",
-		name: t("commands.insertMarker"),
-		editorCallback: (editor: Editor, _view: MarkdownView) => {
-			editor.replaceSelection("#trackdex");
-		},
-	});
-
-	plugin.addCommand({
-		id: "scan-tracks-folder",
-		name: t("commands.scanTracksFolder"),
-		checkCallback: (checking: boolean) => {
-			const markdownView = plugin.app.workspace.getActiveViewOfType(MarkdownView);
-			if (markdownView) {
-				if (!checking) {
-					new Notice(
-						`Trackdex scan is not implemented yet. Folder: ${plugin.settings.tracksFolder}`,
-					);
-				}
-				return true;
-			}
-			return false;
 		},
 	});
 
