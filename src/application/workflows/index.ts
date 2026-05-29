@@ -1,1 +1,1 @@
-export {};
+export { resetIndex, type ResetIndexDeps } from "./reset-index";

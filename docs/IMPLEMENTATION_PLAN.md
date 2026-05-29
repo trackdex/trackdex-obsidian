@@ -7,6 +7,25 @@
 - Business logic is implemented behind abstractions first, concrete adapters second.
 - Scope aligns with `docs/REQUIREMENTS.md`, `docs/PRODUCT_SPEC_V1.md`, and `docs/TECHNICAL_DESIGN.md`; `docs/CONCEPT.md` is historical context only.
 
+## Task breakdown (по milestone)
+
+Детальные задачи, зависимости и чеклисты приёмки — в `docs/milestones/` (формат как у [0.1](milestones/0.1/README.md)):
+
+| Milestone | Статус задач | Задач |
+|-----------|----------------|-------|
+| [0.1 — Foundation](milestones/0.1/README.md) | **0.1-14 PASS** (2026-05-29) | 14 |
+| [0.2 — Storage schema](milestones/0.2/README.md) | **0.2-12 PASS** (2026-05-29) | 12 |
+| [0.3 — Scan engine](milestones/0.3/README.md) | TBD | 12 |
+| [0.4 — Parsers & metrics](milestones/0.4/README.md) | TBD | 14 |
+| [0.5 — Track view](milestones/0.5/README.md) | TBD | 8 |
+| [0.6 — Sidebar catalog](milestones/0.6/README.md) | TBD | 10 |
+| [0.7 — Places](milestones/0.7/README.md) | TBD | 10 |
+| [0.8 — Note links](milestones/0.8/README.md) | TBD | 8 |
+| [0.9 — Settings & UX](milestones/0.9/README.md) | TBD | 12 |
+| [0.10 — Perf & release](milestones/0.10/README.md) | TBD | 11 |
+
+Перегенерация каркаса (после правок определений): `node scripts/generate-milestone-tasks.mjs`.
+
 ## Milestone 0.1 — Foundation and project skeleton
 
 Goal: establish architecture, contracts, plugin bootstrap, and close the storage compatibility decision before feature work depends on it.

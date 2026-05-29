@@ -38,7 +38,7 @@ function readIndexMetaRow(db: ReturnType<SqlStorageAdapter["getDatabase"]>): Ind
 	});
 }
 
-/** SQLite-backed index_meta repository (skeleton schema from migration v0). */
+/** SQLite-backed `IndexMetaRepository` (`index_meta` single row, §6.1 / §7.1). */
 export function createSqlIndexMetaRepository(
 	adapter: SqlStorageAdapter,
 ): IndexMetaRepository {

@@ -125,6 +125,8 @@ const FORBIDDEN_SPIKE_COMMAND_IDS = [
 	"storage-spike-smoke",
 	"storage-spike-verify",
 	"storage-spike-indexeddb",
+	"storage-schema-smoke",
+	"storage-schema-verify",
 	"fit-spike-smoke",
 	"fit-spike-garmin-sdk",
 ];

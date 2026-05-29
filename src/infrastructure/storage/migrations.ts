@@ -1,11 +1,16 @@
 import type { LoggerPort } from "application/ports/logger-port";
 import type { SqlJsDatabase } from "./candidates/sql-js-init";
+import {
+	INDEX_META_TABLE,
+	SCHEMA_VERSION_TABLE,
+} from "./migrations/constants";
+import { applyMigrationV1 } from "./migrations/v1";
+import { V1_SCHEMA_VERSION } from "./migrations/v1-schema";
 
-export const SCHEMA_VERSION_TABLE = "schema_version";
-export const INDEX_META_TABLE = "index_meta";
+export { INDEX_META_TABLE, SCHEMA_VERSION_TABLE } from "./migrations/constants";
 
-/** Latest applied schema version (v0 skeleton; full v1 schema in 0.2). */
-export const LATEST_SCHEMA_VERSION = 0;
+/** Latest applied schema version. */
+export const LATEST_SCHEMA_VERSION = V1_SCHEMA_VERSION;
 
 function readSchemaVersion(db: SqlJsDatabase): number {
 	const result = db.exec(`SELECT version FROM ${SCHEMA_VERSION_TABLE} LIMIT 1`);
@@ -17,7 +22,7 @@ function readSchemaVersion(db: SqlJsDatabase): number {
 }
 
 /** Idempotent v0 bootstrap: version table + single-row index_meta stub. */
-function applyMigrationV0(db: SqlJsDatabase): void {
+export function applyMigrationV0(db: SqlJsDatabase): void {
 	db.run(`
 		CREATE TABLE IF NOT EXISTS ${SCHEMA_VERSION_TABLE} (
 			version INTEGER NOT NULL
@@ -50,18 +55,24 @@ function applyMigrationV0(db: SqlJsDatabase): void {
 
 /**
  * Runs pending migrations inside a transaction.
- * At v0 skeleton: ensures bootstrap tables exist; no version bumps yet.
+ * v0 bootstrap is always applied; v1 runs when stored version is below 1.
  */
 export function runMigrations(db: SqlJsDatabase, logger: LoggerPort): void {
 	logger.info("storage: migrations start", { targetVersion: LATEST_SCHEMA_VERSION });
 	try {
 		db.run("BEGIN");
 		applyMigrationV0(db);
-		const current = readSchemaVersion(db);
+		let current = readSchemaVersion(db);
 		if (current > LATEST_SCHEMA_VERSION) {
 			throw new Error(
 				`index.sqlite schema version ${current} is newer than supported ${LATEST_SCHEMA_VERSION}`,
 			);
+		}
+		if (current < V1_SCHEMA_VERSION) {
+			logger.info("storage: migration v1 start");
+			applyMigrationV1(db);
+			current = readSchemaVersion(db);
+			logger.info("storage: migration v1 end", { schemaVersion: current });
 		}
 		db.run("COMMIT");
 		logger.info("storage: migrations complete", { schemaVersion: current });

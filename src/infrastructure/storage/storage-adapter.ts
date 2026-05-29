@@ -1,4 +1,4 @@
-import type { Plugin } from "obsidian";
+import { Notice, type Plugin } from "obsidian";
 import type { LoggerPort } from "application/ports/logger-port";
 import {
 	ensurePluginDataDir,
@@ -43,7 +43,18 @@ export class SqlStorageAdapter {
 		await ensurePluginDataDir(this.plugin);
 		const existing = await readPluginBinary(this.plugin.app, this.dbPath);
 		this.db = existing ? new SQL.Database(existing) : new SQL.Database();
-		runMigrations(this.db, logger);
+		try {
+			runMigrations(this.db, logger);
+		} catch (err: unknown) {
+			const message = err instanceof Error ? err.message : String(err);
+			new Notice(
+				`Trackdex could not update the local track index (${message}). Reload the plugin or restore index.sqlite from backup.`,
+				0,
+			);
+			this.db.close();
+			this.db = null;
+			throw err;
+		}
 		await this.persist();
 		logger.info("storage: database open", { path: this.dbPath });
 	}

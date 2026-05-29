@@ -1,5 +1,5 @@
-import { Notice } from "obsidian";
 import type { ClockPort } from "application/ports/clock-port";
+import type { IndexResetPort } from "application/ports/index-reset-port";
 import type { LoggerPort } from "application/ports/logger-port";
 import type { PerfMetricsPort } from "application/ports/metrics-port";
 import type { TrackParserPort } from "application/ports/parser-port";
@@ -9,13 +9,18 @@ import type {
 	PlaceRepository,
 	TrackRepository,
 } from "application/ports/repositories";
-import { createNoopLoggerPort } from "../infrastructure/logging/noop-logger-port";
+import { resetIndex as runResetIndex } from "application/workflows/reset-index";
+import { createRotatingFileLoggerHandle } from "../infrastructure/logging";
 import { createNoopMetricsPort } from "../infrastructure/logging/noop-metrics-port";
 import { createSystemClockPort } from "../infrastructure/logging/system-clock-port";
 import { createNoopTrackParserPort } from "../infrastructure/parsers/noop-track-parser-port";
 import {
 	SqlStorageAdapter,
 	createSqlIndexMetaRepository,
+	createSqlIndexResetPort,
+	createSqlNoteLinkRepository,
+	createSqlPlaceRepository,
+	createSqlTrackRepository,
 } from "../infrastructure/storage";
 import {
 	createNoopIndexMetaRepository,
@@ -48,42 +53,47 @@ export interface TrackdexContainer {
 	readonly placeReindex: PlaceReindexService;
 	readonly linkIndex: LinkIndexService;
 	readonly trackQuery: TrackQueryService;
+	resetIndex(): Promise<void>;
 	dispose(): void;
 }
 
 /**
- * Assembles application ports; opens sql.js storage and runs migrations on bootstrap.
- * Track/place/link repositories remain no-op until milestone 0.2.
+ * Assembles application ports; opens sql.js storage, runs migrations, and wires SQL repositories.
  */
 export async function createTrackdexContainer(
 	plugin: TrackdexPluginHost,
 ): Promise<TrackdexContainer> {
 	const disposers: Array<() => void> = [];
 
-	const logger = createNoopLoggerPort();
+	const loggerHandle = createRotatingFileLoggerHandle(plugin);
+	const logger = loggerHandle.port;
+	const flushLogger = (): Promise<void> => loggerHandle.flush();
 	const clock = createSystemClockPort();
 	const metrics = createNoopMetricsPort();
 	const trackParser = createNoopTrackParserPort();
-	const tracks = createNoopTrackRepository();
-	const places = createNoopPlaceRepository();
-	const noteLinks = createNoopNoteLinkRepository();
 
+	let tracks: TrackRepository = createNoopTrackRepository();
+	let places: PlaceRepository = createNoopPlaceRepository();
+	let noteLinks: NoteLinkRepository = createNoopNoteLinkRepository();
 	let indexMeta: IndexMetaRepository = createNoopIndexMetaRepository();
+	let indexReset: IndexResetPort | null = null;
 	let storage: SqlStorageAdapter | null = null;
 
 	try {
 		storage = new SqlStorageAdapter(plugin);
 		await storage.open(logger);
+		tracks = createSqlTrackRepository(storage);
+		places = createSqlPlaceRepository(storage);
+		noteLinks = createSqlNoteLinkRepository(storage);
 		indexMeta = createSqlIndexMetaRepository(storage);
+		indexReset = createSqlIndexResetPort(storage);
 		disposers.push(() => {
 			void storage?.close();
 		});
+		logger.info("storage: repositories wired");
 	} catch (err: unknown) {
 		const message = err instanceof Error ? err.message : String(err);
 		logger.error("storage: bootstrap failed", { error: message });
-		new Notice(
-			"Trackdex could not open the local track index. Catalog features are limited until you reload the plugin.",
-		);
 		await storage?.close();
 		storage = null;
 	}
@@ -92,6 +102,13 @@ export async function createTrackdexContainer(
 	const placeReindex = createPlaceReindexService({ logger, places });
 	const linkIndex = createLinkIndexService({ logger, noteLinks });
 	const trackQuery = createTrackQueryService(tracks);
+
+	const resetIndex = async (): Promise<void> => {
+		if (!indexReset) {
+			throw new Error("Trackdex: index reset unavailable (storage not open)");
+		}
+		await runResetIndex({ indexReset, indexMeta });
+	};
 
 	return {
 		logger,
@@ -106,11 +123,14 @@ export async function createTrackdexContainer(
 		placeReindex,
 		linkIndex,
 		trackQuery,
+		resetIndex,
 		dispose(): void {
+			logger.info("lifecycle: container dispose");
 			for (const dispose of disposers) {
 				dispose();
 			}
 			disposers.length = 0;
+			void flushLogger();
 		},
 	};
 }
