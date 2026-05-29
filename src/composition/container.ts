@@ -60,7 +60,7 @@ export interface TrackdexContainer {
 	readonly trackQuery: TrackQueryService;
 	readonly vaultTrackHandler: VaultTrackEventHandlerPort;
 	resetIndex(): Promise<void>;
-	/** Persists interrupted marker when a scan is active, then releases resources. */
+	/** Clears in-memory scan state and releases resources. Interrupt flag is write-ahead persisted in beginScanRun. */
 	shutdown(): Promise<void>;
 	dispose(): void;
 }

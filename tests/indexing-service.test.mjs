@@ -121,7 +121,15 @@ test("indexing service: approveFirstScan skips enqueue when already approved", a
 	assert.equal((await tracks.list()).length, 0);
 });
 
-test("indexing service: markInterruptedIfScanActive persists only while scan active", async () => {
+test("indexing service: beginScanRun write-ahead persists interrupted flag", async () => {
+	const indexMeta = createMetaRepo();
+	const indexing = createTestIndexingService({ indexMeta });
+
+	await indexing.beginScanRun();
+	assert.equal((await indexMeta.get()).lastRunInterrupted, true);
+});
+
+test("indexing service: markInterruptedIfScanActive clears in-memory run only", async () => {
 	const indexMeta = createMetaRepo();
 	const indexing = createTestIndexingService({ indexMeta });
 
@@ -129,6 +137,8 @@ test("indexing service: markInterruptedIfScanActive persists only while scan act
 	assert.equal((await indexMeta.get()).lastRunInterrupted, false);
 
 	await indexing.beginScanRun();
+	assert.equal((await indexMeta.get()).lastRunInterrupted, true);
+
 	await indexing.markInterruptedIfScanActive();
 	assert.equal((await indexMeta.get()).lastRunInterrupted, true);
 
@@ -143,6 +153,16 @@ test("indexing service: completeScanRun clears interrupted flag", async () => {
 	await indexing.beginScanRun();
 	await indexing.completeScanRun();
 	assert.equal((await indexMeta.get()).lastRunInterrupted, false);
+});
+
+test("indexing service: completeScanRun no-op after interrupt marking", async () => {
+	const indexMeta = createMetaRepo();
+	const indexing = createTestIndexingService({ indexMeta });
+
+	await indexing.beginScanRun();
+	await indexing.markInterruptedIfScanActive();
+	await indexing.completeScanRun();
+	assert.equal((await indexMeta.get()).lastRunInterrupted, true);
 });
 
 test("indexing service: resumeAfterInterrupt clears flag and enqueues scan", async () => {

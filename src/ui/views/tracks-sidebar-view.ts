@@ -82,7 +82,10 @@ export class TracksSidebarView extends ItemView {
 			return;
 		}
 
-		if (meta.lastRunInterrupted) {
+		if (
+			meta.lastRunInterrupted &&
+			!this.deps.indexing.scanProgress.getSnapshot().active
+		) {
 			this.interruptedBanner = renderInterruptedRunBanner({
 				container: root,
 				onResume: () => this.handleResumeAfterInterrupt(),

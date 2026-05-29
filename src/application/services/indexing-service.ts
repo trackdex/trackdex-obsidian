@@ -100,6 +100,10 @@ export function createIndexingService(deps: IndexingServiceDeps): IndexingServic
 		},
 
 		async scanOrResumeIndexing(): Promise<void> {
+			if (scanRunActive) {
+				log.info("scanOrResumeIndexing skipped: scan already active");
+				return;
+			}
 			const meta = await deps.indexMeta.get();
 			if (meta.lastRunInterrupted) {
 				await service.resumeAfterInterrupt();
@@ -114,10 +118,16 @@ export function createIndexingService(deps: IndexingServiceDeps): IndexingServic
 
 		async beginScanRun(): Promise<void> {
 			scanRunActive = true;
+			// Write-ahead: persist before scan work so force-quit / sync onunload need not
+			// await async I/O (Obsidian onunload is synchronous).
+			await deps.indexMeta.update({ lastRunInterrupted: true });
 			log.info("scan run started");
 		},
 
 		async completeScanRun(): Promise<void> {
+			if (!scanRunActive) {
+				return;
+			}
 			scanRunActive = false;
 			await deps.indexMeta.update({ lastRunInterrupted: false });
 			log.info("scan run completed");
@@ -128,7 +138,6 @@ export function createIndexingService(deps: IndexingServiceDeps): IndexingServic
 				return;
 			}
 			scanRunActive = false;
-			await deps.indexMeta.update({ lastRunInterrupted: true });
 			log.info("indexing run marked interrupted (unsafe shutdown)");
 		},
 

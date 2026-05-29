@@ -36,6 +36,7 @@ test("views: tracks sidebar shows interrupted-run banner wiring", () => {
 		"utf8",
 	);
 	assert.match(sidebar, /lastRunInterrupted/);
+	assert.match(sidebar, /scanProgress\.getSnapshot\(\)\.active/);
 	assert.match(sidebar, /renderInterruptedRunBanner/);
 	assert.match(sidebar, /resumeAfterInterrupt/);
 });
