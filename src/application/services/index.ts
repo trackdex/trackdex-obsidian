@@ -1,6 +1,7 @@
 export type { TrackdexServiceDeps } from "application/services/service-deps";
 export {
 	createIndexingService,
+	type EnqueueFullScan,
 	type IndexingScanResult,
 	type IndexingService,
 	type IndexingServiceDeps,

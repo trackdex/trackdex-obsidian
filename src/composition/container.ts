@@ -9,10 +9,15 @@ import type {
 	PlaceRepository,
 	TrackRepository,
 } from "application/ports/repositories";
+import { Platform } from "obsidian";
 import { resetIndex as runResetIndex } from "application/workflows/reset-index";
+import type { VaultTrackEventHandlerPort } from "application/ports/vault-track-event-handler-port";
+import { createFullScanWorkQueue } from "application/workflows/full-scan";
+import { createIncrementalVaultTrackEventHandler } from "application/workflows/incremental-index";
 import { createRotatingFileLoggerHandle } from "../infrastructure/logging";
 import { createNoopMetricsPort } from "../infrastructure/logging/noop-metrics-port";
 import { createSystemClockPort } from "../infrastructure/logging/system-clock-port";
+import { createObsidianVaultScanner } from "../infrastructure/obsidian/vault-scanner";
 import { createNoopTrackParserPort } from "../infrastructure/parsers/noop-track-parser-port";
 import {
 	SqlStorageAdapter,
@@ -53,7 +58,10 @@ export interface TrackdexContainer {
 	readonly placeReindex: PlaceReindexService;
 	readonly linkIndex: LinkIndexService;
 	readonly trackQuery: TrackQueryService;
+	readonly vaultTrackHandler: VaultTrackEventHandlerPort;
 	resetIndex(): Promise<void>;
+	/** Clears in-memory scan state and releases resources. Interrupt flag is write-ahead persisted in beginScanRun. */
+	shutdown(): void;
 	dispose(): void;
 }
 
@@ -98,16 +106,46 @@ export async function createTrackdexContainer(
 		storage = null;
 	}
 
-	const indexing = createIndexingService({ logger, indexMeta });
+	const fullScanQueue = createFullScanWorkQueue({
+		isMobile: Platform.isMobileApp,
+	});
+
+	const indexing = createIndexingService({
+		logger,
+		indexMeta,
+		tracks,
+		clock,
+		queue: fullScanQueue,
+		createScanner: () =>
+			createObsidianVaultScanner(plugin.app, {
+				scanExcludePatterns: plugin.settings.scanExcludePatterns,
+			}),
+	});
 	const placeReindex = createPlaceReindexService({ logger, places });
 	const linkIndex = createLinkIndexService({ logger, noteLinks });
 	const trackQuery = createTrackQueryService(tracks);
+
+	const vaultTrackHandler = createIncrementalVaultTrackEventHandler({
+		tracks,
+		queue: fullScanQueue,
+		isScanPaused: async () => (await indexMeta.get()).scanPaused,
+		logger,
+	});
 
 	const resetIndex = async (): Promise<void> => {
 		if (!indexReset) {
 			throw new Error("Trackdex: index reset unavailable (storage not open)");
 		}
 		await runResetIndex({ indexReset, indexMeta });
+	};
+
+	const dispose = (): void => {
+		logger.info("lifecycle: container dispose");
+		for (const runDispose of disposers) {
+			runDispose();
+		}
+		disposers.length = 0;
+		void flushLogger();
 	};
 
 	return {
@@ -123,14 +161,12 @@ export async function createTrackdexContainer(
 		placeReindex,
 		linkIndex,
 		trackQuery,
+		vaultTrackHandler,
 		resetIndex,
-		dispose(): void {
-			logger.info("lifecycle: container dispose");
-			for (const dispose of disposers) {
-				dispose();
-			}
-			disposers.length = 0;
-			void flushLogger();
+		shutdown(): void {
+			indexing.markInterruptedIfScanActive();
+			dispose();
 		},
+		dispose,
 	};
 }

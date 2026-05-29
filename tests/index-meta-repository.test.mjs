@@ -126,3 +126,15 @@ test("index meta repository: partial update preserves other fields", async () =>
 
 	db.close();
 });
+
+test("index meta repository: tryApproveFirstScan claims approval once", async () => {
+	const { db } = await openMigratedDatabase();
+	const repo = createSqlIndexMetaRepository(createTestStorageAdapter(db));
+
+	assert.equal(await repo.tryApproveFirstScan(), true);
+	assert.equal((await repo.get()).firstScanApproved, true);
+	assert.equal(await repo.tryApproveFirstScan(), false);
+	assert.equal((await repo.get()).firstScanApproved, true);
+
+	db.close();
+});

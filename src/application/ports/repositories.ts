@@ -65,4 +65,6 @@ export interface NoteLinkRepository {
 export interface IndexMetaRepository {
 	get(): Promise<IndexMeta>;
 	update(partial: Partial<IndexMeta>): Promise<void>;
+	/** Atomically sets `firstScanApproved` when false; returns whether this call claimed approval. */
+	tryApproveFirstScan(): Promise<boolean>;
 }

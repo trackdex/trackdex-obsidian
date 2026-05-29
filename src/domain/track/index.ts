@@ -14,6 +14,25 @@ export type { TrackSegment } from "domain/track/track-segment";
 export type { TrackStatus } from "domain/track/track-status";
 export { TRACK_STATUSES } from "domain/track/track-status";
 export type {
+	FileLifecycleEffect,
+	FileStatus,
+	FileStatusSignal,
+	FileStatusTransition,
+	VaultModifyInput,
+	VaultModifyResolution,
+	VaultRenameInput,
+} from "domain/track/file-status";
+export {
+	FILE_STATUS_TRANSITIONS,
+	canTransitionFileStatus,
+	initialDiscoveredFileStatus,
+	resolveVaultFileCreated,
+	resolveVaultFileDeleted,
+	resolveVaultFileModified,
+	resolveVaultFileRenamed,
+	transitionFileStatus,
+} from "domain/track/file-status";
+export type {
 	SortOrder,
 	TrackListQuery,
 	TrackSortField,

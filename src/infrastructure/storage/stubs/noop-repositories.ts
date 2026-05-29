@@ -58,5 +58,12 @@ export function createNoopIndexMetaRepository(): IndexMetaRepository {
 		update: async (partial) => {
 			meta = { ...meta, ...partial };
 		},
+		tryApproveFirstScan: async () => {
+			if (meta.firstScanApproved) {
+				return false;
+			}
+			meta = { ...meta, firstScanApproved: true };
+			return true;
+		},
 	};
 }

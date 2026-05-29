@@ -1,4 +1,5 @@
 import {MarkdownView, Notice} from "obsidian";
+import type {TrackdexContainer} from "../../composition/container";
 import type {TrackdexPluginHost} from "../../composition/plugin-host";
 import {t} from "../../ui/i18n";
 
@@ -32,11 +33,19 @@ function runWhenActiveMarkdownNote(
 }
 
 /** Registers v1 shell commands (localized names, stable IDs, stub callbacks). */
-export function registerTrackdexCommands(plugin: TrackdexPluginHost): void {
+export function registerTrackdexCommands(
+	plugin: TrackdexPluginHost,
+	container: TrackdexContainer,
+): void {
 	plugin.addCommand({
 		id: TRACKDEX_COMMAND_IDS.scanOrResumeIndexing,
 		name: t("commands.scanOrResumeIndexing"),
-		callback: showNotImplementedNotice,
+		callback: () => {
+			void container.indexing.scanOrResumeIndexing().catch((err: unknown) => {
+				const message = err instanceof Error ? err.message : String(err);
+				new Notice(`Trackdex: ${message}`);
+			});
+		},
 	});
 
 	plugin.addCommand({

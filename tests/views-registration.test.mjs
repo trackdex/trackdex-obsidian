@@ -24,6 +24,19 @@ test("views: registerViews wires container in composition", () => {
 	);
 	assert.match(registerViews, /export function registerViews/);
 	assert.match(registerViews, /container\.trackQuery/);
+	assert.match(registerViews, /container\.indexMeta/);
+	assert.match(registerViews, /container\.indexing/);
 	assert.match(registerViews, /TracksSidebarView/);
 	assert.match(registerViews, /TrackView/);
+});
+
+test("views: tracks sidebar shows interrupted-run banner wiring", () => {
+	const sidebar = readFileSync(
+		join(ROOT, "src/ui/views/tracks-sidebar-view.ts"),
+		"utf8",
+	);
+	assert.match(sidebar, /lastRunInterrupted/);
+	assert.match(sidebar, /scanProgress\.getSnapshot\(\)\.active/);
+	assert.match(sidebar, /renderInterruptedRunBanner/);
+	assert.match(sidebar, /resumeAfterInterrupt/);
 });

@@ -1,14 +1,32 @@
 import {ItemView, WorkspaceLeaf} from "obsidian";
+import type {IndexingService} from "../../application/services/indexing-service";
+import type {IndexMetaRepository} from "../../application/ports/repositories";
 import type {TrackQueryService} from "../../application/services/track-query-service";
 import {TRACKDEX_TRACKS_SIDEBAR_VIEW_TYPE} from "../../constants";
+import {
+	renderFirstScanEmptyState,
+	type FirstScanEmptyStateHandle,
+} from "../components/empty-state-first-scan";
+import {
+	renderInterruptedRunBanner,
+	type InterruptedRunBannerHandle,
+} from "../components/interrupted-run-banner";
 import {t} from "../i18n";
 
+export interface TracksSidebarDeps {
+	readonly trackQuery: TrackQueryService;
+	readonly indexMeta: IndexMetaRepository;
+	readonly indexing: IndexingService;
+}
+
 export class TracksSidebarView extends ItemView {
-	private emptyStateEl: HTMLElement | null = null;
+	private catalogEmptyEl: HTMLElement | null = null;
+	private firstScanState: FirstScanEmptyStateHandle | null = null;
+	private interruptedBanner: InterruptedRunBannerHandle | null = null;
 
 	constructor(
 		leaf: WorkspaceLeaf,
-		private readonly trackQuery: TrackQueryService,
+		private readonly deps: TracksSidebarDeps,
 	) {
 		super(leaf);
 	}
@@ -26,32 +44,79 @@ export class TracksSidebarView extends ItemView {
 	}
 
 	async onOpen(): Promise<void> {
-		const root = this.contentEl;
-		root.empty();
-		root.addClass("trackdex-tracks-sidebar");
-
-		this.emptyStateEl = root.createDiv({
-			cls: "trackdex-tracks-sidebar__empty",
-			text: t("views.tracksSidebarEmpty"),
-		});
-
-		void this.refreshIndexedCount();
+		await this.renderBody();
 	}
 
 	async onClose(): Promise<void> {
-		this.emptyStateEl = null;
+		this.disposeFirstScanState();
+		this.disposeInterruptedBanner();
+		this.catalogEmptyEl = null;
 		this.contentEl.empty();
 		await super.onClose();
 	}
 
+	private disposeFirstScanState(): void {
+		this.firstScanState?.dispose();
+		this.firstScanState = null;
+	}
+
+	private disposeInterruptedBanner(): void {
+		this.interruptedBanner?.dispose();
+		this.interruptedBanner = null;
+	}
+
+	private async renderBody(): Promise<void> {
+		const root = this.contentEl;
+		root.empty();
+		root.addClass("trackdex-tracks-sidebar");
+		this.disposeFirstScanState();
+		this.disposeInterruptedBanner();
+		this.catalogEmptyEl = null;
+
+		const meta = await this.deps.indexMeta.get();
+		if (!meta.firstScanApproved) {
+			this.firstScanState = renderFirstScanEmptyState({
+				container: root,
+				onApprove: () => this.handleApproveFirstScan(),
+			});
+			return;
+		}
+
+		if (
+			meta.lastRunInterrupted &&
+			!this.deps.indexing.scanProgress.getSnapshot().active
+		) {
+			this.interruptedBanner = renderInterruptedRunBanner({
+				container: root,
+				onResume: () => this.handleResumeAfterInterrupt(),
+			});
+		}
+
+		this.catalogEmptyEl = root.createDiv({
+			cls: "trackdex-tracks-sidebar__empty",
+			text: t("views.tracksSidebarEmpty"),
+		});
+		void this.refreshIndexedCount();
+	}
+
+	private async handleApproveFirstScan(): Promise<void> {
+		await this.deps.indexing.approveFirstScan();
+		await this.renderBody();
+	}
+
+	private async handleResumeAfterInterrupt(): Promise<void> {
+		await this.deps.indexing.resumeAfterInterrupt();
+		await this.renderBody();
+	}
+
 	private async refreshIndexedCount(): Promise<void> {
-		if (!this.emptyStateEl) {
+		if (!this.catalogEmptyEl) {
 			return;
 		}
 		try {
-			const tracks = await this.trackQuery.listTracks();
+			const tracks = await this.deps.trackQuery.listTracks();
 			if (tracks.length > 0) {
-				this.emptyStateEl.setText(
+				this.catalogEmptyEl.setText(
 					`${t("views.tracksSidebarEmpty")} (${tracks.length})`,
 				);
 			}

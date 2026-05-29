@@ -35,6 +35,56 @@
 	line-height: 1.5;
 }
 
+.trackdex-interrupted-run {
+	background-color: var(--background-modifier-error);
+	border: 1px solid var(--background-modifier-error-hover);
+	border-radius: var(--radius-m);
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	margin-bottom: 0.75rem;
+	padding: 0.75rem;
+}
+
+.trackdex-interrupted-run__message {
+	color: var(--text-normal);
+	font-size: var(--font-ui-small);
+	line-height: 1.5;
+	margin: 0;
+}
+
+.trackdex-interrupted-run__cta {
+	align-self: flex-start;
+}
+
+.trackdex-first-scan {
+	display: flex;
+	flex: 1 1 auto;
+	flex-direction: column;
+	gap: 0.75rem;
+	max-width: 28rem;
+}
+
+.trackdex-first-scan__title {
+	font-size: var(--font-ui-medium);
+	font-weight: var(--font-semibold);
+	line-height: 1.35;
+	margin: 0;
+}
+
+.trackdex-first-scan__body,
+.trackdex-first-scan__formats {
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	line-height: 1.5;
+	margin: 0;
+}
+
+.trackdex-first-scan__cta {
+	align-self: flex-start;
+	margin-top: 0.25rem;
+}
+
 .trackdex-track-view {
 	display: flex;
 	flex: 1 1 auto;
