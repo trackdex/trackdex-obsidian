@@ -54,6 +54,8 @@ export interface TrackdexContainer {
 	readonly linkIndex: LinkIndexService;
 	readonly trackQuery: TrackQueryService;
 	resetIndex(): Promise<void>;
+	/** Persists interrupted marker when a scan is active, then releases resources. */
+	shutdown(): Promise<void>;
 	dispose(): void;
 }
 
@@ -102,7 +104,12 @@ export async function createTrackdexContainer(
 		logger,
 		indexMeta,
 		enqueueFullScan: async () => {
-			logger.info("full scan enqueued (stub until 0.3-08)");
+			await indexing.beginScanRun();
+			try {
+				logger.info("full scan (stub until 0.3-08)");
+			} finally {
+				await indexing.completeScanRun();
+			}
 		},
 	});
 	const placeReindex = createPlaceReindexService({ logger, places });
@@ -114,6 +121,15 @@ export async function createTrackdexContainer(
 			throw new Error("Trackdex: index reset unavailable (storage not open)");
 		}
 		await runResetIndex({ indexReset, indexMeta });
+	};
+
+	const dispose = (): void => {
+		logger.info("lifecycle: container dispose");
+		for (const runDispose of disposers) {
+			runDispose();
+		}
+		disposers.length = 0;
+		void flushLogger();
 	};
 
 	return {
@@ -130,13 +146,10 @@ export async function createTrackdexContainer(
 		linkIndex,
 		trackQuery,
 		resetIndex,
-		dispose(): void {
-			logger.info("lifecycle: container dispose");
-			for (const dispose of disposers) {
-				dispose();
-			}
-			disposers.length = 0;
-			void flushLogger();
+		async shutdown(): Promise<void> {
+			await indexing.markInterruptedIfScanActive();
+			dispose();
 		},
+		dispose,
 	};
 }

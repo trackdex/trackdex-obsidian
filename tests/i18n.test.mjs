@@ -20,6 +20,7 @@ test("createTranslator returns RU strings for ru locale", () => {
 	const tr = createTranslator("ru");
 	assert.equal(tr("commands.openTracksSidebar"), "Открыть каталог треков");
 	assert.match(tr("firstScan.approveCta"), /индексац/i);
+	assert.match(tr("interruptedRun.resumeCta"), /продолжить/i);
 });
 
 test("createTranslator falls back to EN then key for missing entries", () => {

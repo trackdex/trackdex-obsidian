@@ -29,3 +29,13 @@ test("views: registerViews wires container in composition", () => {
 	assert.match(registerViews, /TracksSidebarView/);
 	assert.match(registerViews, /TrackView/);
 });
+
+test("views: tracks sidebar shows interrupted-run banner wiring", () => {
+	const sidebar = readFileSync(
+		join(ROOT, "src/ui/views/tracks-sidebar-view.ts"),
+		"utf8",
+	);
+	assert.match(sidebar, /lastRunInterrupted/);
+	assert.match(sidebar, /renderInterruptedRunBanner/);
+	assert.match(sidebar, /resumeAfterInterrupt/);
+});

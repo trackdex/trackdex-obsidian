@@ -23,8 +23,9 @@ export default class TrackdexPlugin extends Plugin implements TrackdexPluginHost
 
 	onunload(): void {
 		preserveSettingsFocus(this.app);
-		this.container?.dispose();
+		const container = this.container;
 		this.container = null;
+		void container?.shutdown();
 		super.onunload();
 	}
 

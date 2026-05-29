@@ -16,6 +16,12 @@ export const en = {
 	common: {
 		notImplementedYet: "Not implemented yet",
 	},
+	interruptedRun: {
+		message:
+			"Indexing did not finish last time. Some tracks may be missing or out of date.",
+		resumeCta: "Check and continue",
+		resuming: "Checking…",
+	},
 	firstScan: {
 		title: "Index track files in this vault",
 		body:

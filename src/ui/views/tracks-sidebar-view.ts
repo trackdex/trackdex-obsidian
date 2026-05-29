@@ -7,6 +7,10 @@ import {
 	renderFirstScanEmptyState,
 	type FirstScanEmptyStateHandle,
 } from "../components/empty-state-first-scan";
+import {
+	renderInterruptedRunBanner,
+	type InterruptedRunBannerHandle,
+} from "../components/interrupted-run-banner";
 import {t} from "../i18n";
 
 export interface TracksSidebarDeps {
@@ -18,6 +22,7 @@ export interface TracksSidebarDeps {
 export class TracksSidebarView extends ItemView {
 	private catalogEmptyEl: HTMLElement | null = null;
 	private firstScanState: FirstScanEmptyStateHandle | null = null;
+	private interruptedBanner: InterruptedRunBannerHandle | null = null;
 
 	constructor(
 		leaf: WorkspaceLeaf,
@@ -44,6 +49,7 @@ export class TracksSidebarView extends ItemView {
 
 	async onClose(): Promise<void> {
 		this.disposeFirstScanState();
+		this.disposeInterruptedBanner();
 		this.catalogEmptyEl = null;
 		this.contentEl.empty();
 		await super.onClose();
@@ -54,11 +60,17 @@ export class TracksSidebarView extends ItemView {
 		this.firstScanState = null;
 	}
 
+	private disposeInterruptedBanner(): void {
+		this.interruptedBanner?.dispose();
+		this.interruptedBanner = null;
+	}
+
 	private async renderBody(): Promise<void> {
 		const root = this.contentEl;
 		root.empty();
 		root.addClass("trackdex-tracks-sidebar");
 		this.disposeFirstScanState();
+		this.disposeInterruptedBanner();
 		this.catalogEmptyEl = null;
 
 		const meta = await this.deps.indexMeta.get();
@@ -70,6 +82,13 @@ export class TracksSidebarView extends ItemView {
 			return;
 		}
 
+		if (meta.lastRunInterrupted) {
+			this.interruptedBanner = renderInterruptedRunBanner({
+				container: root,
+				onResume: () => this.handleResumeAfterInterrupt(),
+			});
+		}
+
 		this.catalogEmptyEl = root.createDiv({
 			cls: "trackdex-tracks-sidebar__empty",
 			text: t("views.tracksSidebarEmpty"),
@@ -79,6 +98,11 @@ export class TracksSidebarView extends ItemView {
 
 	private async handleApproveFirstScan(): Promise<void> {
 		await this.deps.indexing.approveFirstScan();
+		await this.renderBody();
+	}
+
+	private async handleResumeAfterInterrupt(): Promise<void> {
+		await this.deps.indexing.resumeAfterInterrupt();
 		await this.renderBody();
 	}
 

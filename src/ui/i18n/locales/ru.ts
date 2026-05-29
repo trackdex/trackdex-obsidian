@@ -16,6 +16,12 @@ export const ru: MessagesSchema = {
 	common: {
 		notImplementedYet: "Пока не реализовано",
 	},
+	interruptedRun: {
+		message:
+			"Индексация не была завершена в прошлый раз. Часть треков может отсутствовать или быть устаревшей.",
+		resumeCta: "Проверить и продолжить",
+		resuming: "Проверка…",
+	},
 	firstScan: {
 		title: "Индексировать треки в этом хранилище",
 		body:
