@@ -1,4 +1,3 @@
-import { Notice } from "obsidian";
 import type { ClockPort } from "application/ports/clock-port";
 import type { LoggerPort } from "application/ports/logger-port";
 import type { PerfMetricsPort } from "application/ports/metrics-port";
@@ -81,9 +80,6 @@ export async function createTrackdexContainer(
 	} catch (err: unknown) {
 		const message = err instanceof Error ? err.message : String(err);
 		logger.error("storage: bootstrap failed", { error: message });
-		new Notice(
-			"Trackdex could not open the local track index. Catalog features are limited until you reload the plugin.",
-		);
 		await storage?.close();
 		storage = null;
 	}
