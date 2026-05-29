@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="trackdex-test"
+  xmlns="http://www.topografix.com/GPX/1/1"
+  xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v1">
+  <metadata>
+    <name>Metadata fallback</name>
+  </metadata>
+  <trk>
+    <name>Morning ride</name>
+    <type>cycling</type>
+    <trkseg>
+      <trkpt lat="53.2000" lon="50.1100">
+        <ele>125.0</ele>
+        <time>2024-06-01T08:00:00Z</time>
+        <extensions>
+          <gpxtpx:TrackPointExtension>
+            <gpxtpx:hr>120</gpxtpx:hr>
+          </gpxtpx:TrackPointExtension>
+        </extensions>
+      </trkpt>
+      <trkpt lat="53.2100" lon="50.1200">
+        <ele>128.5</ele>
+        <time>2024-06-01T08:05:00Z</time>
+        <extensions>
+          <gpxtpx:TrackPointExtension>
+            <gpxtpx:hr>125</gpxtpx:hr>
+          </gpxtpx:TrackPointExtension>
+        </extensions>
+      </trkpt>
+    </trkseg>
+    <trkseg>
+      <trkpt lat="53.2200" lon="50.1300">
+        <ele>131.0</ele>
+        <time>2024-06-01T08:10:00Z</time>
+      </trkpt>
+    </trkseg>
+  </trk>
+</gpx>

@@ -2,7 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { DOMParser } from "@xmldom/xmldom";
 import jiti from "jiti";
+
+globalThis.DOMParser = DOMParser;
 
 const ROOT = join(fileURLToPath(new URL(".", import.meta.url)), "..");
 const importTs = jiti(import.meta.url, {
@@ -92,16 +95,38 @@ test("parser router: unknown extension returns unsupported_extension", async () 
 	assert.match(result.error.message, /kml/);
 });
 
-test("parser router: default stubs return parse_failed per format", async () => {
+test("parser router: default stubs return parse_failed for unimplemented formats", async () => {
 	const { createDefaultParserRouter } = importTs(
 		"../src/infrastructure/parsers/parser-router.ts",
 	);
 	const router = createDefaultParserRouter();
 
-	for (const extension of ["gpx", "tcx", "fit", "fit.gz"]) {
+	for (const extension of ["gpx", "fit", "fit.gz"]) {
 		const result = await router.parse(baseInput(extension));
 		assert.equal(result.ok, false);
 		assert.equal(result.error.code, "parse_failed");
-		assert.match(result.error.message, new RegExp(extension.replace(".", "\\.")));
+		assert.match(result.error.message, /not implemented/);
 	}
+});
+
+test("parser router: default tcx adapter is wired (not a stub)", async () => {
+	const { createDefaultParserRouter } = importTs(
+		"../src/infrastructure/parsers/parser-router.ts",
+	);
+	const { readFileSync } = await import("node:fs");
+	const fixture = readFileSync(
+		join(ROOT, "tests/fixtures/sample-activity.tcx"),
+		"utf8",
+	);
+	const router = createDefaultParserRouter();
+	const result = await router.parse({
+		...baseInput("tcx"),
+		content: new TextEncoder().encode(fixture),
+	});
+
+	assert.equal(result.ok, true);
+	if (!result.ok) {
+		return;
+	}
+	assert.ok(result.value.points.length > 0);
 });

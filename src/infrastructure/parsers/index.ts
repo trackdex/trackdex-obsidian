@@ -11,3 +11,11 @@ export {
 	createParserRouter,
 	type ParserRouterDeps,
 } from "./parser-router";
+export {
+	createTcxParserPort,
+	extractTrackpointsFromDocument,
+	isValidCoordinate,
+	parseTcxToParsedTrack,
+	TCX_NAMESPACE,
+	TPX_NAMESPACE,
+} from "./tcx-parser";

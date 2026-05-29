@@ -1,11 +1,19 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {DOMParser} from "@xmldom/xmldom";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { DOMParser } from "@xmldom/xmldom";
 import jiti from "jiti";
 
 globalThis.DOMParser = DOMParser;
 
-const importTs = jiti(import.meta.url);
+const ROOT = join(fileURLToPath(new URL(".", import.meta.url)), "..");
+const importTs = jiti(import.meta.url, {
+	alias: {
+		domain: join(ROOT, "src/domain"),
+		application: join(ROOT, "src/application"),
+	},
+});
 const {
 	parseGpxTrackPoints,
 	extractTrkptsFromDocument,
