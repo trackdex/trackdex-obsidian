@@ -2,6 +2,20 @@
 
 Краткая история релизов Trackdex. Формат версий — [SemVer](https://semver.org/).
 
+## [0.5.0] — 2026-05-29
+
+- Custom Track view при открытии `.gpx`, `.tcx`, `.fit`, `.fit.gz` из проводника.
+- Desktop: карта и статистика в двух колонках; mobile: вкладки «Карта» / «Статистика».
+- Leaflet-карта с polyline из индекса; offline fallback с уведомлением и attribution.
+- Панель статистики и список сегментов только из indexed data (без re-parse).
+
+## [0.4.0] — 2026-05-29
+
+- Парсеры GPX, TCX, FIT и FIT.GZ через единый router (`fit-file-parser`, без spike-зависимостей).
+- Нормализация timestamps/timezone, вычисляемые метрики, multi-segment aggregation.
+- Polyline simplification, bbox, флаги отсутствующих данных; parse pipeline в индексации.
+- Fixture-тесты valid/partial/invalid для всех v1-форматов.
+
 ## [0.0.4] — 2026-05-29
 
 - Парсеры GPX, TCX, FIT и FIT.GZ через единый router.
