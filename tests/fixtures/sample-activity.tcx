@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TrainingCenterDatabase
+  xmlns="http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2 http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2 http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2">
+  <Activities>
+    <Activity Sport="Biking">
+      <Id>2024-06-01T08:00:00.000Z</Id>
+      <Name>Morning ride</Name>
+      <Lap StartTime="2024-06-01T08:00:00.000Z">
+        <TotalTimeSeconds>120.0</TotalTimeSeconds>
+        <Track>
+          <Trackpoint>
+            <Time>2024-06-01T08:00:00.000Z</Time>
+            <Position>
+              <LatitudeDegrees>53.2</LatitudeDegrees>
+              <LongitudeDegrees>50.11</LongitudeDegrees>
+            </Position>
+            <AltitudeMeters>125</AltitudeMeters>
+            <HeartRateBpm><Value>120</Value></HeartRateBpm>
+            <Cadence>85</Cadence>
+            <Extensions>
+              <TPX xmlns="http://www.garmin.com/xmlschemas/ActivityExtension/v2">
+                <Speed>5.5</Speed>
+                <Watts>180</Watts>
+              </TPX>
+            </Extensions>
+          </Trackpoint>
+          <Trackpoint>
+            <Time>2024-06-01T08:01:00.000Z</Time>
+            <Position>
+              <LatitudeDegrees>53.21</LatitudeDegrees>
+              <LongitudeDegrees>50.12</LongitudeDegrees>
+            </Position>
+            <AltitudeMeters>126</AltitudeMeters>
+            <HeartRateBpm><Value>125</Value></HeartRateBpm>
+            <Cadence>88</Cadence>
+          </Trackpoint>
+        </Track>
+      </Lap>
+      <Lap StartTime="2024-06-01T08:02:00.000Z">
+        <Track>
+          <Trackpoint>
+            <Time>2024-06-01T08:02:00.000Z</Time>
+            <Position>
+              <LatitudeDegrees>53.22</LatitudeDegrees>
+              <LongitudeDegrees>50.13</LongitudeDegrees>
+            </Position>
+            <AltitudeMeters>127</AltitudeMeters>
+          </Trackpoint>
+        </Track>
+      </Lap>
+    </Activity>
+  </Activities>
+</TrainingCenterDatabase>
