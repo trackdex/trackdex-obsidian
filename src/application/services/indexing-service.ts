@@ -27,7 +27,7 @@ export interface IndexingService {
 	scanOrResumeIndexing(): Promise<void>;
 	beginScanRun(): Promise<void>;
 	completeScanRun(): Promise<void>;
-	markInterruptedIfScanActive(): Promise<void>;
+	markInterruptedIfScanActive(): void;
 	resumeAfterInterrupt(): Promise<void>;
 }
 
@@ -133,7 +133,7 @@ export function createIndexingService(deps: IndexingServiceDeps): IndexingServic
 			log.info("scan run completed");
 		},
 
-		async markInterruptedIfScanActive(): Promise<void> {
+		markInterruptedIfScanActive(): void {
 			if (!scanRunActive) {
 				return;
 			}

@@ -25,9 +25,7 @@ export default class TrackdexPlugin extends Plugin implements TrackdexPluginHost
 		preserveSettingsFocus(this.app);
 		const container = this.container;
 		this.container = null;
-		// shutdown() is async but interrupt recovery uses write-ahead persistence in
-		// beginScanRun; markInterruptedIfScanActive only flips in-memory state.
-		void container?.shutdown();
+		container?.shutdown();
 		super.onunload();
 	}
 

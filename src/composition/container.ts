@@ -61,7 +61,7 @@ export interface TrackdexContainer {
 	readonly vaultTrackHandler: VaultTrackEventHandlerPort;
 	resetIndex(): Promise<void>;
 	/** Clears in-memory scan state and releases resources. Interrupt flag is write-ahead persisted in beginScanRun. */
-	shutdown(): Promise<void>;
+	shutdown(): void;
 	dispose(): void;
 }
 
@@ -163,8 +163,8 @@ export async function createTrackdexContainer(
 		trackQuery,
 		vaultTrackHandler,
 		resetIndex,
-		async shutdown(): Promise<void> {
-			await indexing.markInterruptedIfScanActive();
+		shutdown(): void {
+			indexing.markInterruptedIfScanActive();
 			dispose();
 		},
 		dispose,

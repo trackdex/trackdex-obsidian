@@ -133,16 +133,16 @@ test("indexing service: markInterruptedIfScanActive clears in-memory run only", 
 	const indexMeta = createMetaRepo();
 	const indexing = createTestIndexingService({ indexMeta });
 
-	await indexing.markInterruptedIfScanActive();
+	indexing.markInterruptedIfScanActive();
 	assert.equal((await indexMeta.get()).lastRunInterrupted, false);
 
 	await indexing.beginScanRun();
 	assert.equal((await indexMeta.get()).lastRunInterrupted, true);
 
-	await indexing.markInterruptedIfScanActive();
+	indexing.markInterruptedIfScanActive();
 	assert.equal((await indexMeta.get()).lastRunInterrupted, true);
 
-	await indexing.markInterruptedIfScanActive();
+	indexing.markInterruptedIfScanActive();
 	assert.equal((await indexMeta.get()).lastRunInterrupted, true);
 });
 
@@ -160,7 +160,7 @@ test("indexing service: completeScanRun no-op after interrupt marking", async ()
 	const indexing = createTestIndexingService({ indexMeta });
 
 	await indexing.beginScanRun();
-	await indexing.markInterruptedIfScanActive();
+	indexing.markInterruptedIfScanActive();
 	await indexing.completeScanRun();
 	assert.equal((await indexMeta.get()).lastRunInterrupted, true);
 });
