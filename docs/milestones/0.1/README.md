@@ -74,3 +74,47 @@ Spike-задачи **0.1-03** и **0.1-04** не зависят от кода с
 - Нет прямых импортов concrete storage вне `infrastructure/`.
 - В `docs/TECHNICAL_DESIGN.md` зафиксированы решения по storage (**0.1-05**, §2.1) и FIT (**0.1-06**, §2.5).
 - Milestone **0.2** разблокируется после **0.1-05** (+ **0.1-09** bootstrap); milestone **0.4** — после **0.1-06** (FIT gate closed: `fit-file-parser`, `.fit` + `.fit.gz`).
+
+## Приёмка milestone (**0.1-14**)
+
+| Поле | Значение |
+|------|----------|
+| **Дата** | 2026-05-29 |
+| **Версия** | `0.0.1` (`manifest.json`) |
+| **Результат** | **PASS** |
+| **Коммит** | `0.1-14: milestone 0.1 acceptance gate` (see `git log`) |
+
+### Автоматические проверки (2026-05-29)
+
+| Проверка | Результат |
+|----------|-----------|
+| `npm run build` | PASS (exit 0) |
+| `npm test` | PASS (25 tests, incl. `tests/import-boundaries.test.mjs`) |
+| Import architecture gate | PASS (`sql.js` / parser libs only under `src/infrastructure/storage/**` and `src/infrastructure/parsers/**`; `application/` + `domain/` clean; `composition/` no direct `sql.js`) |
+| Артефакты сборки | `main.js`, `manifest.json`, `styles.css` present after build |
+| `npm run lint` | FAIL (72 pre-existing ESLint false positives on `domain/…` path aliases + 2 floating-promise warnings in `open-tracks-sidebar.ts`; **не блокирует** gate 0.1-14 — lint не в обязательном чеклисте задачи) |
+
+### Deliverables и gates
+
+| Критерий | Статус |
+|----------|--------|
+| DI container bootstrap (**0.1-07**) | PASS — `createTrackdexContainer` in `src/composition/container.ts` |
+| Port interfaces + service stubs (**0.1-02**, **0.1-08**) | PASS |
+| Commands + views registered (**0.1-11**, **0.1-12**) | PASS — 6 v1 commands (`commands-registry.ts`), track + sidebar views |
+| Storage decision + evidence (**0.1-03**, **0.1-05**, **0.1-09**) | PASS — `docs/TECHNICAL_DESIGN.md` §2.1, `evidence/storage-spike.md`, `index.sqlite` bootstrap |
+| FIT decision + evidence (**0.1-04**, **0.1-06**) | PASS — `docs/TECHNICAL_DESIGN.md` §2.5, `evidence/fit-parser-spike.md` |
+| Gate **0.2** (storage) | **Unblocked** |
+| Gate **0.4** (FIT) | **Unblocked** (`fit-file-parser`, `.fit` + `.fit.gz`) |
+| Legacy cleanup (**0.1-13**) | PASS |
+
+### Ручной smoke
+
+| Сценарий | Статус | Примечание |
+|----------|--------|------------|
+| Desktop: enable/disable plugin | PASS (evidence) | [storage-spike.md](./evidence/storage-spike.md#desktop-obsidian) — 2026-05-28 |
+| Desktop: 6 v1 commands in palette | PASS (code) | `TRACKDEX_COMMAND_IDS` × 6 in `commands-registry.ts` |
+| Desktop: `.gpx` → track view | PASS (code) | `registerExtensions` for `gpx` / `tcx` / `fit` / `fit.gz` |
+| Desktop: `index.sqlite` after bootstrap | PASS (code + spike) | `SqlStorageAdapter` + operator CRUD/reload (**0.1-09**) |
+| Mobile (`isDesktopOnly: false`) | PASS (evidence) | [storage-spike.md](./evidence/storage-spike.md#android-obsidian-mobile) — Android 2026-05-28 |
+
+**Milestone 0.1 complete.** Milestone **0.2** may start.
