@@ -18,6 +18,16 @@ import {
 	createNoopPlaceRepository,
 	createNoopTrackRepository,
 } from "../infrastructure/storage/stubs/noop-repositories";
+import {
+	createIndexingService,
+	createLinkIndexService,
+	createPlaceReindexService,
+	createTrackQueryService,
+	type IndexingService,
+	type LinkIndexService,
+	type PlaceReindexService,
+	type TrackQueryService,
+} from "../application/services";
 import type { TrackdexPluginHost } from "./plugin-host";
 
 export interface TrackdexContainer {
@@ -29,6 +39,10 @@ export interface TrackdexContainer {
 	readonly places: PlaceRepository;
 	readonly noteLinks: NoteLinkRepository;
 	readonly indexMeta: IndexMetaRepository;
+	readonly indexing: IndexingService;
+	readonly placeReindex: PlaceReindexService;
+	readonly linkIndex: LinkIndexService;
+	readonly trackQuery: TrackQueryService;
 	dispose(): void;
 }
 
@@ -41,15 +55,33 @@ export function createTrackdexContainer(
 ): TrackdexContainer {
 	const disposers: Array<() => void> = [];
 
+	const logger = createNoopLoggerPort();
+	const clock = createSystemClockPort();
+	const metrics = createNoopMetricsPort();
+	const trackParser = createNoopTrackParserPort();
+	const tracks = createNoopTrackRepository();
+	const places = createNoopPlaceRepository();
+	const noteLinks = createNoopNoteLinkRepository();
+	const indexMeta = createNoopIndexMetaRepository();
+
+	const indexing = createIndexingService({ logger, indexMeta });
+	const placeReindex = createPlaceReindexService({ logger, places });
+	const linkIndex = createLinkIndexService({ logger, noteLinks });
+	const trackQuery = createTrackQueryService(tracks);
+
 	return {
-		logger: createNoopLoggerPort(),
-		clock: createSystemClockPort(),
-		metrics: createNoopMetricsPort(),
-		trackParser: createNoopTrackParserPort(),
-		tracks: createNoopTrackRepository(),
-		places: createNoopPlaceRepository(),
-		noteLinks: createNoopNoteLinkRepository(),
-		indexMeta: createNoopIndexMetaRepository(),
+		logger,
+		clock,
+		metrics,
+		trackParser,
+		tracks,
+		places,
+		noteLinks,
+		indexMeta,
+		indexing,
+		placeReindex,
+		linkIndex,
+		trackQuery,
 		dispose(): void {
 			for (const dispose of disposers) {
 				dispose();
