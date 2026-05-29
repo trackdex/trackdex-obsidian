@@ -295,8 +295,8 @@ Must
 - Совместимость (desktop/mobile):
   - `isDesktopOnly: false`.
   - Mobile support крайне желательна для v1; целевое поведение desktop/mobile одинаковое.
-  - Если ранний storage/mobile spike покажет, что выбранное локальное хранилище не работает надёжно на mobile Obsidian, команда принимает явное решение: заменить adapter или сузить v1 до desktop-only с обновлением `manifest.json` и release notes.
-  - Mobile performance thresholds считаются целевыми инженерными ориентирами до завершения storage/parser spikes и первых baseline-измерений; desktop thresholds являются release gate для v1.
+  - Storage/mobile spike (**0.1-03**, evidence `docs/milestones/0.1/evidence/storage-spike.md`): **закрыт** — primary adapter **sql.js** + `index.sqlite`, `isDesktopOnly: false` подтверждён на desktop и Android; решение зафиксировано в `docs/TECHNICAL_DESIGN.md` §2.1 (**0.1-05**).
+  - Mobile performance thresholds остаются инженерными ориентирами до FIT parser baseline; desktop thresholds — release gate для v1.
 - Безопасность/приватность:
   - Offline-first; сеть в v1 только для tiles.
   - Без скрытой telemetry, без автосендов логов/данных vault.
@@ -333,5 +333,5 @@ Must
 - [x] Понятно, что именно считать “готово”.
 
 ## Открытые пункты (если остались)
-- Критичный технический gate: подтвердить SQLite-compatible storage adapter на desktop и mobile Obsidian при `isDesktopOnly: false`. SQLite является предпочтительным направлением; до закрытия gate нельзя считать реализацию storage/indexing готовой к разработке за пределами spike.
+- ~~Критичный технический gate: storage adapter~~ — **закрыт (0.1-05):** sql.js + `index.sqlite`, `isDesktopOnly: false`; evidence `docs/milestones/0.1/evidence/storage-spike.md`.
 - Критичный технический gate: подтвердить FIT/FIT.GZ parser на desktop/mobile Obsidian, включая bundle size и отсутствие недоступных runtime API; если gate не закрывается, явно пересмотреть форматный scope v1.

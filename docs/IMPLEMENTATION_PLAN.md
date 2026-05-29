@@ -43,7 +43,7 @@ Done criteria:
 - `npm run build` passes.
 - Smoke test still passes.
 - No direct storage-adapter imports outside infrastructure layer.
-- Milestone 0.2 is blocked until the storage adapter decision is recorded, including whether v1 remains `isDesktopOnly: false` or intentionally becomes desktop-only.
+- Milestone 0.2 storage gate: **closed** in `docs/TECHNICAL_DESIGN.md` §2.1 (sql.js + `index.sqlite`, `isDesktopOnly: false`); 0.2 starts after 0.1-09 bootstrap skeleton lands.
 - Milestone 0.4 is blocked until the FIT/FIT.GZ parser decision is recorded or v1 format scope is explicitly changed.
 
 ## Milestone 0.2 — Storage schema and indexing meta
