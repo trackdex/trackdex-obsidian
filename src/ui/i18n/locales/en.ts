@@ -12,6 +12,13 @@ export const en = {
 	},
 	settings: {
 		comingSoon: "Trackdex settings will be available in a later milestone.",
+		legalTitle: "Legal and privacy",
+		legalTileNetwork:
+			"When you view a track on the map, Trackdex may request raster map tiles from OpenStreetMap. This sends your approximate map viewport to the tile server.",
+		legalOfflineFirst:
+			"Trackdex is offline-first for indexing and track data. Map tiles require network access.",
+		legalLogsLocal:
+			"Indexing logs are stored locally in the plugin data folder only; they are not sent elsewhere.",
 	},
 	common: {
 		notImplementedYet: "Not implemented yet",
@@ -33,10 +40,45 @@ export const en = {
 	views: {
 		tracksSidebarTitle: "Track catalog",
 		tracksSidebarEmpty: "No indexed tracks yet. Indexing progress will appear here.",
-		trackStatsPlaceholder:
-			"Stats panel (milestone 0.5). Indexed tracks: {count}.",
-		trackMobileTabsHint: "On mobile, map and stats will use tabs.",
+		trackStatsTitle: "Track stats",
+		trackStatsNotIndexed: "This file is not in the index yet.",
+		trackStatsPending: "Waiting to be indexed.",
+		trackStatsIndexing: "Indexing in progress…",
+		trackStatsStale: "Index is out of date. Metrics may not match the file.",
+		trackStatsIndexError: "Indexing failed for this file.",
+		trackStatsLoadError: "Could not load indexed stats.",
+		trackStatsDate: "Date",
+		trackStatsDuration: "Duration",
+		trackStatsDistance: "Distance",
+		trackStatsElevationGain: "Elevation gain",
+		trackStatsElevationLoss: "Elevation loss",
+		trackStatsAvgSpeed: "Avg speed",
+		trackStatsMaxSpeed: "Max speed",
+		trackStatsHrAvg: "Avg heart rate",
+		trackStatsHrMax: "Max heart rate",
+		trackStatsPowerAvg: "Avg power",
+		trackStatsCadenceAvg: "Avg cadence",
+		trackStatsSport: "Sport",
+		trackStatsStatusPending: "Pending",
+		trackStatsStatusIndexing: "Indexing",
+		trackStatsStatusIndexed: "Indexed",
+		trackStatsStatusStale: "Stale",
+		trackStatsStatusError: "Error",
+		trackMobileTabMap: "Map",
+		trackMobileTabStats: "Stats",
 		trackPreviewComingSoon: "Map preview for this format is coming soon.",
+		trackMapTilesOffline:
+			"Map tiles unavailable. Showing route geometry only.",
+		trackMapNoGeometry: "No route geometry available for this track.",
+		trackSegmentListTitle: "Segments",
+		trackSegmentDefaultName: "Segment {index}",
+		trackSegmentDuration: "Duration",
+		trackSegmentDistance: "Distance",
+		trackSegmentPointCount: "Points",
+		trackMapAttributionLegalBeforeLink:
+			"Map tiles may load from OpenStreetMap when online. ",
+		trackMapAttributionLegalLink: "Privacy and legal info",
+		trackMapAttributionLegalAfterLink: " in settings.",
 	},
 } as const;
 

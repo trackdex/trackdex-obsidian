@@ -12,6 +12,13 @@ export const ru: MessagesSchema = {
 	},
 	settings: {
 		comingSoon: "Настройки Trackdex появятся в следующих этапах.",
+		legalTitle: "Правовая информация и конфиденциальность",
+		legalTileNetwork:
+			"При просмотре трека на карте Trackdex может запрашивать растровые тайлы у OpenStreetMap. Это передаёт примерную область карты на сервер тайлов.",
+		legalOfflineFirst:
+			"Trackdex работает офлайн для индексации и данных треков. Тайлы карты требуют сети.",
+		legalLogsLocal:
+			"Логи индексации хранятся только локально в папке данных плагина и никуда не отправляются.",
 	},
 	common: {
 		notImplementedYet: "Пока не реализовано",
@@ -34,11 +41,46 @@ export const ru: MessagesSchema = {
 		tracksSidebarTitle: "Каталог треков",
 		tracksSidebarEmpty:
 			"Пока нет проиндексированных треков. Здесь появится прогресс индексации.",
-		trackStatsPlaceholder:
-			"Панель статистики (этап 0.5). Проиндексировано треков: {count}.",
-		trackMobileTabsHint:
-			"На мобильных карта и статистика будут во вкладках.",
+		trackStatsTitle: "Статистика трека",
+		trackStatsNotIndexed: "Этот файл ещё не в индексе.",
+		trackStatsPending: "Ожидает индексации.",
+		trackStatsIndexing: "Идёт индексация…",
+		trackStatsStale:
+			"Индекс устарел. Метрики могут не совпадать с файлом.",
+		trackStatsIndexError: "Не удалось проиндексировать этот файл.",
+		trackStatsLoadError: "Не удалось загрузить статистику из индекса.",
+		trackStatsDate: "Дата",
+		trackStatsDuration: "Длительность",
+		trackStatsDistance: "Дистанция",
+		trackStatsElevationGain: "Набор высоты",
+		trackStatsElevationLoss: "Сброс высоты",
+		trackStatsAvgSpeed: "Средняя скорость",
+		trackStatsMaxSpeed: "Макс. скорость",
+		trackStatsHrAvg: "Средний пульс",
+		trackStatsHrMax: "Макс. пульс",
+		trackStatsPowerAvg: "Средняя мощность",
+		trackStatsCadenceAvg: "Средний каденс",
+		trackStatsSport: "Вид спорта",
+		trackStatsStatusPending: "Ожидает",
+		trackStatsStatusIndexing: "Индексация",
+		trackStatsStatusIndexed: "Проиндексирован",
+		trackStatsStatusStale: "Устарел",
+		trackStatsStatusError: "Ошибка",
+		trackMobileTabMap: "Карта",
+		trackMobileTabStats: "Статистика",
 		trackPreviewComingSoon:
 			"Предпросмотр карты для этого формата скоро появится.",
+		trackMapTilesOffline:
+			"Тайлы карты недоступны. Показана только геометрия маршрута.",
+		trackMapNoGeometry: "Для этого трека нет геометрии маршрута.",
+		trackSegmentListTitle: "Сегменты",
+		trackSegmentDefaultName: "Сегмент {index}",
+		trackSegmentDuration: "Длительность",
+		trackSegmentDistance: "Дистанция",
+		trackSegmentPointCount: "Точки",
+		trackMapAttributionLegalBeforeLink:
+			"При наличии сети тайлы карты могут загружаться с OpenStreetMap. ",
+		trackMapAttributionLegalLink: "Правовая информация и конфиденциальность",
+		trackMapAttributionLegalAfterLink: " — в настройках.",
 	},
 };

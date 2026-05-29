@@ -45,11 +45,18 @@ flowchart TD
 
 | Поле | Значение |
 |------|----------|
-| **Дата** | _TBD_ |
-| **Версия** | _TBD_ (`manifest.json`) |
-| **Результат** | _TBD_ (PASS/FAIL) |
-| **Коммит** | _TBD_ |
+| **Дата** | 2026-05-29 |
+| **Версия** | 0.0.4 (`manifest.json`) |
+| **Результат** | PASS |
+| **Коммит** | `docs(0.5-08): milestone 0.5 acceptance PASS` (see `git log`) |
 
 ### Prerequisite
 
 - Milestone **0.4** complete (**0.4-14** PASS).
+
+### Follow-ups from operator smoke (2026-05-29)
+
+→ [evidence/manual-smoke-follow-ups.md](./evidence/manual-smoke-follow-ups.md)
+
+- Sidebar empty state при наличии индекса → **0.6**
+- `.gpx.gz` / `.tcx.gz` без карты и индекса → parser extension + track view (см. IMPLEMENTATION_PLAN backlog)

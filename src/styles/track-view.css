@@ -103,38 +103,245 @@
 	min-height: 0;
 }
 
+/* Desktop (>=769px): map ~60% left, stats ~40% right — see track-view-layout.ts */
 .trackdex-track-view__map-column {
 	display: flex;
-	flex: 1 1 58%;
+	flex: 1 1 60%;
 	flex-direction: column;
 	min-height: 0;
 	min-width: 0;
 }
 
-.trackdex-track-view__mobile-hint {
-	display: none;
-	flex-shrink: 0;
-	margin-bottom: 0.35rem;
-	color: var(--text-faint);
-	font-size: var(--font-ui-smaller);
+.trackdex-track-view__stats-column {
+	display: flex;
+	flex: 0 0 40%;
+	flex-direction: column;
+	min-height: 0;
+	min-width: 12rem;
+	max-width: 40%;
 }
 
-.trackdex-track-view__stats-placeholder {
+.trackdex-track-view__stats-panel-host {
 	display: flex;
-	flex: 0 0 38%;
+	flex: 1 1 auto;
 	flex-direction: column;
-	align-items: flex-start;
-	justify-content: flex-start;
-	min-width: 10rem;
+	min-height: 0;
+	overflow-y: auto;
+}
+
+.trackdex-track-stats-panel {
+	display: flex;
+	flex: 1 1 auto;
+	flex-direction: column;
+	gap: 0.75rem;
+	min-height: 0;
 	padding: 0.75rem;
-	border: 1px dashed var(--background-modifier-border);
+	border: 1px solid var(--background-modifier-border);
 	border-radius: var(--radius-m);
+}
+
+.trackdex-track-stats-panel__title {
+	font-size: var(--font-ui-medium);
+	font-weight: var(--font-semibold);
+	line-height: 1.35;
+	margin: 0;
+}
+
+.trackdex-track-stats-panel__status {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.35rem;
+}
+
+.trackdex-track-stats-panel__status-badge {
+	border-radius: var(--radius-s);
+	font-size: var(--font-ui-smaller);
+	font-weight: var(--font-medium);
+	line-height: 1.3;
+	padding: 0.15rem 0.45rem;
+}
+
+.trackdex-track-stats-panel__status-badge--indexed {
+	background: color-mix(in srgb, var(--color-green) 18%, transparent);
+	color: var(--text-normal);
+}
+
+.trackdex-track-stats-panel__status-badge--pending,
+.trackdex-track-stats-panel__status-badge--indexing,
+.trackdex-track-stats-panel__status-badge--stale {
+	background: var(--background-modifier-hover);
+	color: var(--text-muted);
+}
+
+.trackdex-track-stats-panel__status-badge--error {
+	background: color-mix(in srgb, var(--color-red) 18%, transparent);
+	color: var(--text-error);
+}
+
+.trackdex-track-stats-panel__message {
 	color: var(--text-muted);
 	font-size: var(--font-ui-small);
 	line-height: 1.5;
+	margin: 0;
+}
+
+.trackdex-track-stats-panel__rows {
+	display: flex;
+	flex-direction: column;
+	gap: 0.35rem;
+}
+
+.trackdex-track-stats-panel__row {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+	gap: 0.5rem;
+	align-items: baseline;
+}
+
+.trackdex-track-stats-panel__label {
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	line-height: 1.4;
+}
+
+.trackdex-track-stats-panel__value {
+	color: var(--text-normal);
+	font-size: var(--font-ui-small);
+	font-variant-numeric: tabular-nums;
+	line-height: 1.4;
+	text-align: right;
+}
+
+.trackdex-track-segment-list-host {
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+}
+
+.trackdex-track-segment-list {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	padding-top: 0.75rem;
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+.trackdex-track-segment-list__title {
+	font-size: var(--font-ui-small);
+	font-weight: var(--font-semibold);
+	line-height: 1.35;
+	margin: 0;
+}
+
+.trackdex-track-segment-list__items {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.trackdex-track-segment-list__item {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+	padding: 0.5rem 0.6rem;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	background: var(--background-secondary);
+}
+
+.trackdex-track-segment-list__name {
+	color: var(--text-normal);
+	font-size: var(--font-ui-small);
+	font-weight: var(--font-medium);
+	line-height: 1.35;
+}
+
+.trackdex-track-segment-list__metrics {
+	display: flex;
+	flex-direction: column;
+	gap: 0.2rem;
+}
+
+.trackdex-track-segment-list__metric {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+	gap: 0.5rem;
+	align-items: baseline;
+}
+
+.trackdex-track-segment-list__metric-label {
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+	line-height: 1.4;
+}
+
+.trackdex-track-segment-list__metric-value {
+	color: var(--text-normal);
+	font-size: var(--font-ui-smaller);
+	font-variant-numeric: tabular-nums;
+	line-height: 1.4;
+	text-align: right;
+}
+
+.trackdex-track-view__mobile-tabs {
+	display: none;
+	flex-shrink: 0;
+	gap: 0.5rem;
+	margin-bottom: 0.5rem;
+}
+
+.trackdex-track-view__mobile-tab {
+	flex: 1 1 50%;
+	min-height: 2.75rem;
+	padding: 0.5rem 0.75rem;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	background: var(--background-secondary);
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	font-weight: var(--font-medium);
+	line-height: 1.35;
+	cursor: pointer;
+	touch-action: manipulation;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.trackdex-track-view__mobile-tab:hover {
+	color: var(--text-normal);
+	border-color: var(--background-modifier-border-hover);
+}
+
+.trackdex-track-view__mobile-tab:focus-visible {
+	outline: 2px solid var(--interactive-accent);
+	outline-offset: 2px;
+}
+
+.trackdex-track-view__mobile-tab--active {
+	background: var(--interactive-accent);
+	border-color: var(--interactive-accent);
+	color: var(--text-on-accent);
+}
+
+@media (min-width: 769px) {
+	.trackdex-track-view__layout {
+		flex-direction: row;
+	}
+
+	.trackdex-track-view__map-column {
+		flex: 1 1 60%;
+	}
+
+	.trackdex-track-view__stats-column {
+		flex: 0 0 40%;
+		max-width: 40%;
+	}
 }
 
 @media (max-width: 768px) {
+	.trackdex-track-view__mobile-tabs {
+		display: flex;
+	}
+
 	.trackdex-track-view__layout {
 		flex-direction: column;
 	}
@@ -143,13 +350,19 @@
 		flex: 1 1 auto;
 	}
 
-	.trackdex-track-view__stats-placeholder {
-		flex: 0 0 auto;
+	.trackdex-track-view__stats-column {
+		flex: 1 1 auto;
+		max-width: none;
 		width: 100%;
+		min-height: 0;
 	}
 
-	.trackdex-track-view__mobile-hint {
-		display: block;
+	.trackdex-track-view__layout--tab-map .trackdex-track-view__stats-column {
+		display: none;
+	}
+
+	.trackdex-track-view__layout--tab-stats .trackdex-track-view__map-column {
+		display: none;
 	}
 }
 
@@ -212,6 +425,27 @@
 	pointer-events: none;
 }
 
+.trackdex-track-stub__map-offline-notice {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	z-index: 3;
+	padding: 0.5rem 0.75rem;
+	background: color-mix(in srgb, var(--background-primary) 92%, transparent);
+	border-bottom: 1px solid var(--background-modifier-border);
+	color: var(--text-warning);
+	font-size: var(--font-ui-smaller);
+	line-height: 1.4;
+	text-align: center;
+	pointer-events: none;
+}
+
+.trackdex-track-stub__attribution-host {
+	flex-shrink: 0;
+	min-height: 0;
+}
+
 .trackdex-track-stub__attribution {
 	flex-shrink: 0;
 	margin: 0.5rem 0 0;
@@ -220,6 +454,39 @@
 	line-height: 1.4;
 }
 
-.trackdex-track-stub__attribution a {
+.trackdex-track-stub__attribution-tiles {
+	margin: 0 0 0.25rem;
+}
+
+.trackdex-track-stub__attribution-tiles[hidden] {
+	display: none;
+}
+
+.trackdex-track-stub__attribution-tiles a,
+.trackdex-track-stub__attribution-legal a {
 	text-decoration: underline;
+	cursor: pointer;
+}
+
+.trackdex-track-stub__attribution-legal {
+	margin: 0;
+}
+
+.trackdex-settings__legal {
+	margin-top: 1.25rem;
+	padding-top: 1rem;
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+.trackdex-settings__legal h3 {
+	font-size: var(--font-ui-medium);
+	font-weight: var(--font-semibold);
+	margin: 0 0 0.5rem;
+}
+
+.trackdex-settings__legal p {
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	line-height: 1.5;
+	margin: 0 0 0.5rem;
 }

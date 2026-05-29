@@ -1,5 +1,9 @@
-import {debounce, Notice, TextFileView, type TFile, WorkspaceLeaf} from "obsidian";
-import {DEFAULT_BASEMAP_TILE_URL, TRACKDEX_TRACK_VIEW_TYPE} from "../../constants";
+import {debounce, TextFileView, type TFile, WorkspaceLeaf} from "obsidian";
+import {
+	DEFAULT_BASEMAP_ATTRIBUTION,
+	DEFAULT_BASEMAP_TILE_URL,
+	TRACKDEX_TRACK_VIEW_TYPE,
+} from "../../constants";
 import {
 	createTrackBasemap,
 	destroyTrackBasemap,
@@ -11,31 +15,57 @@ import {
 } from "../../infrastructure/map/track-basemap";
 import {
 	addTrackRouteLayer,
+	createTrackTileStatusMonitor,
+	domainLatLngToLeaflet,
 	type TrackRouteLayer,
-} from "../../infrastructure/map/track-route-layer";
+	type TrackTileStatusMonitor,
+} from "../../infrastructure/map";
 import type {TrackQueryService} from "../../application/services/track-query-service";
 import {parseGpxTrackPoints} from "../../infrastructure/parsers/gpx-parser";
 import type {TrackdexPluginHost} from "../../composition/plugin-host";
 import {t} from "../i18n";
 import {getTrackFileExtension} from "./track-file-extension";
 import {
+	buildTrackViewLayout,
+	TRACK_VIEW_LAYOUT_CLASSES,
+	type MobileTab,
+} from "./track-view-layout";
+import {
 	refreshViewNavButtons,
 	syncViewHeaderTitle,
 } from "../components/file-view-nav";
 import {preserveSettingsFocus} from "../components/preserve-settings-focus";
+import {openPluginSettings} from "../components/open-plugin-settings";
+import {
+	renderTrackMapAttribution,
+	type TrackMapAttributionHandle,
+} from "../components/track-map-attribution";
+import {
+	renderTrackStatsPanel,
+	type TrackStatsPanelHandle,
+} from "../components/track-stats-panel";
 
 export class TrackView extends TextFileView {
 	private basemap: TrackBasemap | null = null;
 	private routeLayer: TrackRouteLayer | null = null;
 	private layoutEl: HTMLElement | null = null;
-	private statsPlaceholderEl: HTMLElement | null = null;
+	private mobileTabsEl: HTMLElement | null = null;
+	private mapTabButton: HTMLButtonElement | null = null;
+	private statsTabButton: HTMLButtonElement | null = null;
+	private activeMobileTab: MobileTab = "map";
+	private statsColumnEl: HTMLElement | null = null;
+	private statsPanelHostEl: HTMLElement | null = null;
+	private statsPanel: TrackStatsPanelHandle | null = null;
 	private mapColumnEl: HTMLElement | null = null;
 	private mapContainerEl: HTMLElement | null = null;
 	private mapWrapEl: HTMLElement | null = null;
 	private mapErrorEl: HTMLElement | null = null;
+	private mapOfflineNoticeEl: HTMLElement | null = null;
+	private mapAttributionHostEl: HTMLElement | null = null;
+	private mapAttribution: TrackMapAttributionHandle | null = null;
+	private mapReady = false;
+	private tileStatusMonitor: TrackTileStatusMonitor | null = null;
 	private mapInitGeneration = 0;
-	private tileErrorCount = 0;
-	private tileErrorNoticeShown = false;
 	private isClosing = false;
 	private closing: Promise<void> | null = null;
 	private mapVisibilityObserver: IntersectionObserver | null = null;
@@ -110,7 +140,6 @@ export class TrackView extends TextFileView {
 	}
 
 	clear(): void {
-		// Reset editor state for a new file — not the same as closing the view tab.
 		this.onWindowResize.cancel();
 		this.onMapRefresh.cancel();
 		this.teardownMap();
@@ -118,8 +147,13 @@ export class TrackView extends TextFileView {
 		this.pendingMapView = null;
 		this.restoredMapViewFromHistory = false;
 		this.layoutEl = null;
+		this.mobileTabsEl = null;
+		this.mapTabButton = null;
+		this.statsTabButton = null;
 		this.mapColumnEl = null;
-		this.statsPlaceholderEl = null;
+		this.statsColumnEl = null;
+		this.statsPanelHostEl = null;
+		this.disposeStatsPanel();
 		this.contentEl.empty();
 	}
 
@@ -159,7 +193,7 @@ export class TrackView extends TextFileView {
 				refreshViewNavButtons(this);
 			}),
 		);
-		void this.refreshStatsPlaceholder();
+		this.refreshStatsPanel();
 	}
 
 	async onClose(): Promise<void> {
@@ -176,6 +210,7 @@ export class TrackView extends TextFileView {
 		this.onWindowResize.cancel();
 		this.onMapRefresh.cancel();
 		this.teardownMap();
+		this.contentEl.empty();
 		await super.onClose();
 	}
 
@@ -273,7 +308,6 @@ export class TrackView extends TextFileView {
 			return;
 		}
 		if (!this.restoredMapViewFromHistory) {
-			// Forward navigation to a new track — default map, not the previous track.
 			this.pendingMapView = null;
 		}
 		this.restoredMapViewFromHistory = false;
@@ -288,32 +322,32 @@ export class TrackView extends TextFileView {
 
 		this.renderedFilePath = this.file?.path ?? null;
 
-		const el = this.contentEl;
-		el.empty();
-		el.addClass("trackdex-track-view");
-
-		const layout = el.createDiv({cls: "trackdex-track-view__layout"});
-		this.layoutEl = layout;
-
-		const mapColumn = layout.createDiv({cls: "trackdex-track-view__map-column"});
-		this.mapColumnEl = mapColumn;
-		mapColumn.createDiv({
-			cls: "trackdex-track-view__mobile-hint",
-			text: t("views.trackMobileTabsHint"),
+		const built = buildTrackViewLayout(this.contentEl, this.activeMobileTab, {
+			map: t("views.trackMobileTabMap"),
+			stats: t("views.trackMobileTabStats"),
 		});
+		this.mobileTabsEl = built.mobileTabsEl;
+		this.mapTabButton = built.mapTabButton;
+		this.statsTabButton = built.statsTabButton;
+		this.layoutEl = built.layoutEl;
+		this.mapColumnEl = built.mapColumnEl;
+		this.statsColumnEl = built.statsColumnEl;
+		this.statsPanelHostEl = built.statsPanelHostEl;
+		this.mapWrapEl = built.mapWrapEl;
+		this.mapContainerEl = built.mapContainerEl;
+		this.mapErrorEl = built.mapErrorEl;
+		this.mapOfflineNoticeEl = built.mapOfflineNoticeEl;
+		this.mapAttributionHostEl = built.mapAttributionHostEl;
+		this.renderMapAttribution();
 
-		const mapWrap = mapColumn.createDiv({cls: "trackdex-track-stub__map-wrap"});
-		this.mapWrapEl = mapWrap;
-		this.mapContainerEl = mapWrap.createDiv({cls: "trackdex-track-stub__map"});
-		this.mapErrorEl = mapWrap.createDiv({
-			cls: "trackdex-track-stub__map-error",
-		});
-		this.mapErrorEl.hide();
-
-		this.statsPlaceholderEl = layout.createDiv({
-			cls: "trackdex-track-view__stats-placeholder",
-		});
-		void this.refreshStatsPlaceholder();
+		this.registerDomEvent(this.mapTabButton, "click", () =>
+			this.setMobileTab("map"),
+		);
+		this.registerDomEvent(this.statsTabButton, "click", () =>
+			this.setMobileTab("stats"),
+		);
+		this.syncMobileTabUi();
+		this.refreshStatsPanel();
 
 		const trackExt = this.file ? getTrackFileExtension(this.file) : null;
 		if (trackExt !== "gpx") {
@@ -336,18 +370,50 @@ export class TrackView extends TextFileView {
 		});
 	}
 
-	private async refreshStatsPlaceholder(): Promise<void> {
-		if (!this.statsPlaceholderEl || this.isClosing) {
+	private setMobileTab(tab: MobileTab): void {
+		if (this.activeMobileTab === tab) {
 			return;
 		}
-		try {
-			const tracks = await this.trackQuery.listTracks();
-			this.statsPlaceholderEl.setText(
-				t("views.trackStatsPlaceholder", {count: tracks.length}),
-			);
-		} catch {
-			this.statsPlaceholderEl.setText(t("views.trackStatsPlaceholder", {count: 0}));
+		this.activeMobileTab = tab;
+		this.syncMobileTabUi();
+		if (tab === "map" && this.basemap) {
+			this.scheduleMapResize();
+			this.scheduleMapRefresh(true);
 		}
+	}
+
+	private syncMobileTabUi(): void {
+		const tab = this.activeMobileTab;
+		const c = TRACK_VIEW_LAYOUT_CLASSES;
+		this.layoutEl?.toggleClass(c.layoutTabMap, tab === "map");
+		this.layoutEl?.toggleClass(c.layoutTabStats, tab === "stats");
+		this.mapTabButton?.toggleClass(c.mobileTabActive, tab === "map");
+		this.mapTabButton?.setAttribute(
+			"aria-selected",
+			tab === "map" ? "true" : "false",
+		);
+		this.statsTabButton?.toggleClass(c.mobileTabActive, tab === "stats");
+		this.statsTabButton?.setAttribute(
+			"aria-selected",
+			tab === "stats" ? "true" : "false",
+		);
+	}
+
+	private disposeStatsPanel(): void {
+		this.statsPanel?.dispose();
+		this.statsPanel = null;
+	}
+
+	private refreshStatsPanel(): void {
+		if (!this.statsPanelHostEl || this.isClosing) {
+			return;
+		}
+		this.disposeStatsPanel();
+		this.statsPanel = renderTrackStatsPanel({
+			container: this.statsPanelHostEl,
+			trackQuery: this.trackQuery,
+			filePath: this.file?.path ?? null,
+		});
 	}
 
 	private initMap(tileUrl: string): void {
@@ -367,22 +433,21 @@ export class TrackView extends TextFileView {
 				scrollTargets,
 				this.pendingMapView ?? undefined,
 			);
-			this.basemap.tileLayer.on("tileerror", () => {
-				if (this.isClosing || !this.basemap) {
-					return;
-				}
-				this.tileErrorCount++;
-				if (!this.tileErrorNoticeShown && this.tileErrorCount >= 5) {
-					this.tileErrorNoticeShown = true;
-					new Notice(
-						"Some map tiles failed to load. Check your network connection.",
-					);
-				}
+			this.tileStatusMonitor = createTrackTileStatusMonitor(this.basemap);
+			this.register(() => {
+				this.tileStatusMonitor?.destroy();
+				this.tileStatusMonitor = null;
 			});
+			this.tileStatusMonitor.onChange((unavailable) => {
+				this.syncMapOfflineNotice(unavailable);
+			});
+			this.syncMapOfflineNotice(this.tileStatusMonitor.tilesUnavailable);
 			this.basemap.map.whenReady(() => {
 				if (this.isClosing || !this.basemap) {
 					return;
 				}
+				this.mapReady = true;
+				this.syncMapAttribution();
 				this.mapErrorEl?.hide();
 				this.renderTrackRoute();
 				this.scheduleMapResize();
@@ -422,7 +487,48 @@ export class TrackView extends TextFileView {
 		this.mapErrorEl.show();
 	}
 
+	private syncMapOfflineNotice(unavailable: boolean): void {
+		if (!this.mapOfflineNoticeEl || this.isClosing) {
+			return;
+		}
+		if (unavailable) {
+			this.mapOfflineNoticeEl.setText(t("views.trackMapTilesOffline"));
+			this.mapOfflineNoticeEl.show();
+		} else {
+			this.mapOfflineNoticeEl.hide();
+		}
+		this.syncMapAttribution();
+	}
+
+	private renderMapAttribution(): void {
+		this.mapAttribution?.dispose();
+		this.mapAttribution = null;
+		if (!this.mapAttributionHostEl || this.isClosing) {
+			return;
+		}
+		this.mapAttribution = renderTrackMapAttribution({
+			container: this.mapAttributionHostEl,
+			tileAttributionHtml: DEFAULT_BASEMAP_ATTRIBUTION,
+			onOpenSettings: () => {
+				void openPluginSettings(this.app, this.plugin.manifest.id);
+			},
+			bindClick: (el, handler) => this.registerDomEvent(el, "click", handler),
+		});
+		this.syncMapAttribution();
+	}
+
+	private syncMapAttribution(): void {
+		const tilesUnavailable = this.tileStatusMonitor?.tilesUnavailable ?? false;
+		this.mapAttribution?.sync({
+			showTileAttribution: this.mapReady && !tilesUnavailable,
+		});
+	}
+
 	private renderTrackRoute(): void {
+		void this.loadAndRenderTrackRoute();
+	}
+
+	private async loadAndRenderTrackRoute(): Promise<void> {
 		this.clearRouteLayer();
 		if (
 			!this.basemap ||
@@ -432,17 +538,55 @@ export class TrackView extends TextFileView {
 			return;
 		}
 
-		const parsed = parseGpxTrackPoints(this.data);
-		if (!parsed.ok) {
-			console.warn("Trackdex GPX parse:", parsed.message);
-			this.showMapError(parsed.message, false);
+		const fitBounds = this.pendingMapView === null;
+		const filePath = this.file.path;
+		const generation = this.mapInitGeneration;
+
+		try {
+			const indexed = await this.trackQuery.findTrackByPath(filePath);
+			if (
+				this.isClosing ||
+				generation !== this.mapInitGeneration ||
+				!this.basemap ||
+				this.file?.path !== filePath
+			) {
+				return;
+			}
+
+			if (
+				indexed?.polylineSimplified &&
+				indexed.polylineSimplified.length > 0
+			) {
+				const latlngs = domainLatLngToLeaflet(indexed.polylineSimplified);
+				this.routeLayer = addTrackRouteLayer(this.basemap, latlngs, {
+					fitBounds,
+					bbox: indexed.bbox,
+				});
+				return;
+			}
+		} catch (error) {
+			console.warn("Trackdex index lookup:", error);
+		}
+
+		if (
+			this.isClosing ||
+			generation !== this.mapInitGeneration ||
+			!this.basemap ||
+			this.file?.path !== filePath
+		) {
 			return;
 		}
 
-		const fitBounds = this.pendingMapView === null;
-		this.routeLayer = addTrackRouteLayer(this.basemap, parsed.points, {
-			fitBounds,
-		});
+		const parsed = parseGpxTrackPoints(this.data);
+		if (parsed.ok) {
+			this.routeLayer = addTrackRouteLayer(this.basemap, parsed.points, {
+				fitBounds,
+			});
+			return;
+		}
+
+		console.warn("Trackdex GPX parse:", parsed.message);
+		this.showMapError(t("views.trackMapNoGeometry"), false);
 	}
 
 	private clearRouteLayer(): void {
@@ -477,8 +621,11 @@ export class TrackView extends TextFileView {
 
 	private teardownMap(): void {
 		this.mapInitGeneration++;
-		this.tileErrorCount = 0;
-		this.tileErrorNoticeShown = false;
+		this.mapReady = false;
+		this.mapAttribution?.dispose();
+		this.mapAttribution = null;
+		this.tileStatusMonitor?.destroy();
+		this.tileStatusMonitor = null;
 		this.onMapRefresh.cancel();
 		this.detachMapVisibilityObserver();
 		this.mapWasVisible = false;
@@ -489,8 +636,15 @@ export class TrackView extends TextFileView {
 		this.mapContainerEl = null;
 		this.mapWrapEl = null;
 		this.mapErrorEl = null;
+		this.mapOfflineNoticeEl = null;
+		this.mapAttributionHostEl = null;
 		this.layoutEl = null;
+		this.mobileTabsEl = null;
+		this.mapTabButton = null;
+		this.statsTabButton = null;
 		this.mapColumnEl = null;
-		this.statsPlaceholderEl = null;
+		this.statsColumnEl = null;
+		this.statsPanelHostEl = null;
+		this.disposeStatsPanel();
 	}
 }

@@ -54,3 +54,9 @@ flowchart TD
 ### Prerequisite
 
 - Milestone **0.5** complete (**0.5-08** PASS).
+
+### Follow-ups from 0.5 smoke
+
+→ [0.5/evidence/manual-smoke-follow-ups.md](../0.5/evidence/manual-smoke-follow-ups.md)
+
+- **0.6-01:** sidebar должен показывать indexed tracks вместо вечного empty-state.

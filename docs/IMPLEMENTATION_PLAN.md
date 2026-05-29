@@ -298,6 +298,7 @@ Done criteria:
 
 ## Optional backlog after 0.10
 
+- **Compressed GPX/TCX (`.gpx.gz`, `.tcx.gz`)** — decompress adapter, extension routing, vault scan, index + track view map/stats. Smoke follow-up from 0.5 (2026-05-29); PRODUCT_SPEC REQ-001; currently excluded in v1 domain (`track-file-name.ts`). Planned after core catalog (0.6) or alongside parser hardening (0.10).
 - Moving time and avg-by-moving-time.
 - Tile cache and provider UI switching.
 - Visual place geometry editor on map.

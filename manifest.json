@@ -1,7 +1,7 @@
 {
 	"id": "trackdex-obsidian",
 	"name": "Trackdex",
-	"version": "0.0.4",
+	"version": "0.5.0",
 	"minAppVersion": "0.15.0",
 	"description": "Read-only catalog of GPX tracks — browse, filter by region, and view stats in your vault.",
 	"isDesktopOnly": false,

@@ -8,4 +8,17 @@ export {
 	type TrackBasemap,
 	type TrackMapViewState,
 } from "./track-basemap";
-export {addTrackRouteLayer, type TrackRouteLayer} from "./track-route-layer";
+export {
+	domainBboxToLeafletBounds,
+	domainLatLngToLeaflet,
+} from "./track-route-geometry";
+export {
+	addTrackRouteLayer,
+	type TrackRouteLayer,
+	type TrackRouteLayerOptions,
+} from "./track-route-layer";
+export {
+	createTrackTileStatusMonitor,
+	type TrackTileStatusMonitor,
+	type TrackTileStatusOptions,
+} from "./track-tile-status";
