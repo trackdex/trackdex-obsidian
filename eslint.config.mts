@@ -43,7 +43,7 @@ export default tseslint.config(
 			"obsidianmd/ui/sentence-case": [
 				"error",
 				{
-					acronyms: ["GPX", "URL"],
+					acronyms: ["FIT", "GPX", "URL"],
 					brands: ["Trackdex"],
 					allowAutoFix: true,
 				},

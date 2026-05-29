@@ -7,6 +7,8 @@ import { fileURLToPath } from "node:url";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const MAIN_OUT = join(ROOT, "main.js");
 const SPIKE_ONLY_OUT = join(ROOT, "main.js.spike-only.tmp");
+const FIT_FFP_OUT = join(ROOT, "main.js.fit-ffp.tmp");
+const FIT_GARMIN_OUT = join(ROOT, "main.js.fit-garmin.tmp");
 
 function formatMb(bytes) {
 	return `${(bytes / (1024 * 1024)).toFixed(2)} MB (${bytes} bytes)`;
@@ -37,34 +39,54 @@ function sqlWasmEmbedPlugin() {
 	};
 }
 
-async function buildSpikeOnly() {
+async function buildIsolated(entryPath, outfile) {
 	await esbuild.build({
-		entryPoints: [
-			join(ROOT, "src/infrastructure/storage/candidates/spike-bundle-entry.ts"),
-		],
+		entryPoints: [entryPath],
 		bundle: true,
-		outfile: SPIKE_ONLY_OUT,
+		outfile,
 		format: "cjs",
 		target: "es2018",
 		minify: true,
 		treeShaking: true,
 		external: ["obsidian", "electron", ...builtinModules],
-		plugins: [sqlWasmEmbedPlugin()],
+		plugins: entryPath.includes("storage") ? [sqlWasmEmbedPlugin()] : [],
 		logLevel: "silent",
 	});
-	return statSync(SPIKE_ONLY_OUT).size;
+	return statSync(outfile).size;
 }
 
 const productionMainSize = statSync(MAIN_OUT).size;
-const spikeOnlySize = await buildSpikeOnly();
+const sqlSpikeSize = await buildIsolated(
+	join(ROOT, "src/infrastructure/storage/candidates/spike-bundle-entry.ts"),
+	SPIKE_ONLY_OUT,
+);
+const fitFfpSize = await buildIsolated(
+	join(
+		ROOT,
+		"src/infrastructure/parsers/candidates/spike-bundle-entry-fit-file-parser.ts",
+	),
+	FIT_FFP_OUT,
+);
+const fitGarminSize = await buildIsolated(
+	join(
+		ROOT,
+		"src/infrastructure/parsers/candidates/spike-bundle-entry-garmin-sdk.ts",
+	),
+	FIT_GARMIN_OUT,
+);
 const wasmSize = statSync(
 	join(ROOT, "node_modules/sql.js/dist/sql-wasm.wasm"),
 ).size;
 
 console.log("Bundle size report (run after `npm run build`):");
-console.log(`  production main.js (ENABLE_STORAGE_SPIKE=false): ${formatMb(productionMainSize)}`);
-console.log(`  sql.js + embedded WASM only (isolated minified bundle): ${formatMb(spikeOnlySize)}`);
+console.log(`  production main.js (spike flags false): ${formatMb(productionMainSize)}`);
+console.log(`  sql.js + embedded WASM (isolated): ${formatMb(sqlSpikeSize)}`);
+console.log(`  fit-file-parser (isolated): ${formatMb(fitFfpSize)}`);
+console.log(`  @garmin-fit/sdk (isolated): ${formatMb(fitGarminSize)}`);
 console.log(`  raw sql-wasm.wasm on disk: ${formatMb(wasmSize)}`);
 console.log(
-	`  rough main.js with spike enabled (estimate): ${formatMb(productionMainSize + spikeOnlySize)}`,
+	`  rough main.js + sql.js spike: ${formatMb(productionMainSize + sqlSpikeSize)}`,
+);
+console.log(
+	`  rough main.js + fit-file-parser spike: ${formatMb(productionMainSize + fitFfpSize)}`,
 );

@@ -7,6 +7,7 @@ import {
 } from "./ui/settings/settings-tab";
 import {registerTrackView} from "./ui/views/register-track-view";
 import {ENABLE_STORAGE_SPIKE} from "./infrastructure/storage/candidates/spike-config";
+import {ENABLE_FIT_PARSER_SPIKE} from "./infrastructure/parsers/candidates/spike-config";
 
 export default class TrackdexPlugin extends Plugin {
 	settings: TrackdexSettings;
@@ -62,6 +63,13 @@ export default class TrackdexPlugin extends Plugin {
 				"./infrastructure/storage/candidates/register-storage-spike-command"
 			);
 			registerStorageSpikeCommand(this);
+		}
+
+		if (ENABLE_FIT_PARSER_SPIKE) {
+			const {registerFitParserSpikeCommand} = await import(
+				"./infrastructure/parsers/candidates/register-fit-parser-spike-command"
+			);
+			registerFitParserSpikeCommand(this);
 		}
 	}
 
