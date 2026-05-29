@@ -1,4 +1,9 @@
 export {
+	renderFirstScanEmptyState,
+	type FirstScanEmptyStateHandle,
+	type RenderFirstScanEmptyStateOptions,
+} from "./empty-state-first-scan";
+export {
 	asFileViewNav,
 	refreshViewNavButtons,
 	syncViewHeaderTitle,

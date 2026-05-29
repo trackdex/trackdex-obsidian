@@ -69,8 +69,11 @@ export function resolveVaultTrackRenameEvents(
 	return [];
 }
 
-export function shouldDispatchVaultTrackEvents(scanPaused: boolean): boolean {
-	return !scanPaused;
+export function shouldDispatchVaultTrackEvents(
+	scanPaused: boolean,
+	firstScanApproved: boolean,
+): boolean {
+	return firstScanApproved && !scanPaused;
 }
 
 export interface RegisterVaultIndexEventsDeps {
@@ -78,6 +81,7 @@ export interface RegisterVaultIndexEventsDeps {
 	readonly app: App;
 	readonly getScanExcludePatterns: () => readonly ScanExcludePattern[];
 	readonly isScanPaused: () => Promise<boolean>;
+	readonly isFirstScanApproved: () => Promise<boolean>;
 	readonly handler: VaultTrackEventHandlerPort;
 	readonly logger?: LoggerPort;
 }
@@ -109,8 +113,11 @@ export function registerVaultIndexEvents(deps: RegisterVaultIndexEventsDeps): vo
 		}
 		void (async () => {
 			try {
-				const paused = await deps.isScanPaused();
-				if (!shouldDispatchVaultTrackEvents(paused)) {
+				const [paused, firstScanApproved] = await Promise.all([
+					deps.isScanPaused(),
+					deps.isFirstScanApproved(),
+				]);
+				if (!shouldDispatchVaultTrackEvents(paused, firstScanApproved)) {
 					return;
 				}
 				for (const event of events) {

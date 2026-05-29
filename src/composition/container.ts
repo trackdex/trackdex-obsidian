@@ -98,7 +98,13 @@ export async function createTrackdexContainer(
 		storage = null;
 	}
 
-	const indexing = createIndexingService({ logger, indexMeta });
+	const indexing = createIndexingService({
+		logger,
+		indexMeta,
+		enqueueFullScan: async () => {
+			logger.info("full scan enqueued (stub until 0.3-08)");
+		},
+	});
 	const placeReindex = createPlaceReindexService({ logger, places });
 	const linkIndex = createLinkIndexService({ logger, noteLinks });
 	const trackQuery = createTrackQueryService(tracks);

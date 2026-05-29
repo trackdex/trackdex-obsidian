@@ -16,9 +16,13 @@ export interface IndexingService {
 	resumeIndexing(): Promise<void>;
 }
 
+/** Full vault scan hook; real workflow in 0.3-08 (`full-scan.ts`). */
+export type EnqueueFullScan = () => Promise<void>;
+
 export interface IndexingServiceDeps {
 	readonly logger: LoggerPort;
 	readonly indexMeta: IndexMetaRepository;
+	readonly enqueueFullScan?: EnqueueFullScan;
 }
 
 export function createIndexingService(deps: IndexingServiceDeps): IndexingService {
@@ -26,8 +30,17 @@ export function createIndexingService(deps: IndexingServiceDeps): IndexingServic
 
 	return {
 		async approveFirstScan(): Promise<void> {
-			log.info("approveFirstScan (stub)");
+			const meta = await deps.indexMeta.get();
+			if (meta.firstScanApproved) {
+				return;
+			}
 			await deps.indexMeta.update({ firstScanApproved: true });
+			log.info("first scan approved");
+			if (deps.enqueueFullScan) {
+				await deps.enqueueFullScan();
+			} else {
+				log.info("enqueueFullScan not wired (0.3-08)");
+			}
 		},
 
 		async scanTracksFolder(rootFolder: string): Promise<Result<IndexingScanResult, DomainError>> {

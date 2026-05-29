@@ -26,6 +26,8 @@ export async function bootstrapTrackdexPlugin(
 		app: plugin.app,
 		getScanExcludePatterns: () => plugin.settings.scanExcludePatterns,
 		isScanPaused: async () => (await container.indexMeta.get()).scanPaused,
+		isFirstScanApproved: async () =>
+			(await container.indexMeta.get()).firstScanApproved,
 		handler: createStubVaultTrackEventHandler(container.logger),
 		logger: container.logger,
 	});

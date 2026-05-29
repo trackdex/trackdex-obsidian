@@ -16,9 +16,17 @@ export const en = {
 	common: {
 		notImplementedYet: "Not implemented yet",
 	},
+	firstScan: {
+		title: "Index track files in this vault",
+		body:
+			"Trackdex will scan your vault for GPX, TCX, and FIT files. Files are read only; your notes and track files are not modified.",
+		formats: "Supported: .gpx, .tcx, .fit, and .fit.gz (case-insensitive).",
+		approveCta: "Start indexing",
+		approving: "Starting…",
+	},
 	views: {
 		tracksSidebarTitle: "Track catalog",
-		tracksSidebarEmpty: "Track catalog is coming soon. Run indexing in a later milestone.",
+		tracksSidebarEmpty: "No indexed tracks yet. Indexing progress will appear here.",
 		trackStatsPlaceholder:
 			"Stats panel (milestone 0.5). Indexed tracks: {count}.",
 		trackMobileTabsHint: "On mobile, map and stats will use tabs.",

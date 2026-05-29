@@ -24,6 +24,11 @@ export function registerViews(
 
 	plugin.registerView(
 		TRACKDEX_TRACKS_SIDEBAR_VIEW_TYPE,
-		(leaf) => new TracksSidebarView(leaf, container.trackQuery),
+		(leaf) =>
+			new TracksSidebarView(leaf, {
+				trackQuery: container.trackQuery,
+				indexMeta: container.indexMeta,
+				indexing: container.indexing,
+			}),
 	);
 }

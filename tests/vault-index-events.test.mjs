@@ -21,9 +21,11 @@ const { isVaultTrackFileCandidate } = importTs(
 	"../src/infrastructure/obsidian/vault-scanner.ts",
 );
 
-test("vault index events: scan paused blocks dispatch", () => {
-	assert.equal(shouldDispatchVaultTrackEvents(false), true);
-	assert.equal(shouldDispatchVaultTrackEvents(true), false);
+test("vault index events: dispatch requires consent and not paused", () => {
+	assert.equal(shouldDispatchVaultTrackEvents(false, true), true);
+	assert.equal(shouldDispatchVaultTrackEvents(true, true), false);
+	assert.equal(shouldDispatchVaultTrackEvents(false, false), false);
+	assert.equal(shouldDispatchVaultTrackEvents(true, false), false);
 });
 
 test("vault index events: extension and exclude filter", () => {

@@ -16,10 +16,18 @@ export const ru: MessagesSchema = {
 	common: {
 		notImplementedYet: "Пока не реализовано",
 	},
+	firstScan: {
+		title: "Индексировать треки в этом хранилище",
+		body:
+			"Trackdex просканирует хранилище на файлы GPX, TCX и FIT. Файлы только читаются; заметки и треки не изменяются.",
+		formats: "Поддерживаются: .gpx, .tcx, .fit и .fit.gz (без учёта регистра).",
+		approveCta: "Начать индексацию",
+		approving: "Запуск…",
+	},
 	views: {
 		tracksSidebarTitle: "Каталог треков",
 		tracksSidebarEmpty:
-			"Каталог треков скоро появится. Индексация — в следующих этапах.",
+			"Пока нет проиндексированных треков. Здесь появится прогресс индексации.",
 		trackStatsPlaceholder:
 			"Панель статистики (этап 0.5). Проиндексировано треков: {count}.",
 		trackMobileTabsHint:

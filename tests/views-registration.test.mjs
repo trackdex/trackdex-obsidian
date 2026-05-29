@@ -24,6 +24,8 @@ test("views: registerViews wires container in composition", () => {
 	);
 	assert.match(registerViews, /export function registerViews/);
 	assert.match(registerViews, /container\.trackQuery/);
+	assert.match(registerViews, /container\.indexMeta/);
+	assert.match(registerViews, /container\.indexing/);
 	assert.match(registerViews, /TracksSidebarView/);
 	assert.match(registerViews, /TrackView/);
 });
