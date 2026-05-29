@@ -18,6 +18,8 @@ import { createRotatingFileLoggerHandle } from "../infrastructure/logging";
 import { createNoopMetricsPort } from "../infrastructure/logging/noop-metrics-port";
 import { createSystemClockPort } from "../infrastructure/logging/system-clock-port";
 import { createObsidianVaultScanner } from "../infrastructure/obsidian/vault-scanner";
+import { createObsidianVaultTrackFilePort } from "../infrastructure/obsidian/vault-track-file";
+import { createIndexTrackFileJob } from "../application/workflows/index-track-file";
 import { createDefaultParserRouter } from "../infrastructure/parsers/parser-router";
 import {
 	SqlStorageAdapter,
@@ -110,6 +112,15 @@ export async function createTrackdexContainer(
 		isMobile: Platform.isMobileApp,
 	});
 
+	const vaultTrackFile = createObsidianVaultTrackFilePort(plugin.app);
+	const indexTrackFile = createIndexTrackFileJob({
+		tracks,
+		trackParser,
+		vaultTrackFile,
+		clock,
+		logger,
+	});
+
 	const indexing = createIndexingService({
 		logger,
 		indexMeta,
@@ -120,6 +131,7 @@ export async function createTrackdexContainer(
 			createObsidianVaultScanner(plugin.app, {
 				scanExcludePatterns: plugin.settings.scanExcludePatterns,
 			}),
+		indexTrackFile,
 	});
 	const placeReindex = createPlaceReindexService({ logger, places });
 	const linkIndex = createLinkIndexService({ logger, noteLinks });
@@ -128,6 +140,7 @@ export async function createTrackdexContainer(
 	const vaultTrackHandler = createIncrementalVaultTrackEventHandler({
 		tracks,
 		queue: fullScanQueue,
+		indexTrackFile,
 		isScanPaused: async () => (await indexMeta.get()).scanPaused,
 		logger,
 	});

@@ -5,6 +5,7 @@ export {
 	listTrackFilesFromCandidates,
 	type VaultFileCandidate,
 } from "./vault-scanner";
+export { createObsidianVaultTrackFilePort } from "./vault-track-file";
 export {
 	registerVaultIndexEvents,
 	resolveVaultTrackRenameEvents,
