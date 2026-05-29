@@ -1,5 +1,7 @@
 import type { Bbox } from "domain/shared/geo";
+import { deriveTrackDataFlags } from "domain/track/derive-track-data-flags";
 import type { ParsedTrack } from "domain/track/parsed-track";
+import type { TrackDataFlags } from "domain/track/track-data-flags";
 import type { TrackSegment } from "domain/track/track-segment";
 import type { ComputedTrackMetrics } from "domain/track/track-metrics";
 import { computeTrackMetrics } from "domain/track/track-metrics";
@@ -21,6 +23,7 @@ export interface AggregatedTrackCatalogData {
 	readonly segments: TrackSegment[] | null;
 	readonly times: NormalizedTrackTimes;
 	readonly metrics: ComputedTrackMetrics;
+	readonly dataFlags: TrackDataFlags;
 }
 
 /**
@@ -42,5 +45,6 @@ export function aggregateParsedTrackForCatalog(
 		segments,
 		times,
 		metrics,
+		dataFlags: deriveTrackDataFlags(track),
 	};
 }

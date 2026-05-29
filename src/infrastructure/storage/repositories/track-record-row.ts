@@ -1,6 +1,5 @@
 import type { SqlValue } from "sql.js";
 import type { Bbox, LatLng } from "domain/shared/geo";
-import type { TrackDataFlags } from "domain/track/track-data-flags";
 import type { TrackRecord } from "domain/track/track-record";
 import type { TrackSegment } from "domain/track/track-segment";
 import { TRACK_STATUSES, type TrackStatus } from "domain/track/track-status";
@@ -8,6 +7,10 @@ import {
 	TIMEZONE_SOURCES,
 	type TimezoneSource,
 } from "domain/track/timezone-source";
+import {
+	trackDataFlagsFromJson,
+	trackDataFlagsToJson,
+} from "./track-data-flags-json";
 
 /** SQLite row shape for `tracks` (snake_case columns). */
 export interface TracksTableRow {
@@ -68,12 +71,8 @@ function parseJsonColumn<T>(
 	}
 }
 
-function parseDataFlags(raw: string): TrackDataFlags {
-	const parsed = parseJsonColumn<TrackDataFlags>(raw, "data_flags_json");
-	if (parsed == null || typeof parsed !== "object" || Array.isArray(parsed)) {
-		throw new Error("Trackdex storage: invalid data_flags_json");
-	}
-	return parsed;
+function parseDataFlags(raw: string) {
+	return trackDataFlagsFromJson(raw);
 }
 
 export function rowToTrackRecord(row: TracksTableRow): TrackRecord {
@@ -156,7 +155,7 @@ export function trackRecordToRowParams(record: TrackRecord): SqlValue[] {
 		stringifyJson(record.bbox),
 		stringifyJson(record.polylineSimplified),
 		stringifyJson(record.segments),
-		JSON.stringify(record.dataFlags ?? {}),
+		trackDataFlagsToJson(record.dataFlags),
 		record.hrAvg,
 		record.hrMax,
 		record.powerAvg,
