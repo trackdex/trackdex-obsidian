@@ -1,4 +1,6 @@
+import {createStubVaultTrackEventHandler} from "../application/indexing/vault-track-event-handler-stub";
 import {registerTrackdexCommands} from "../infrastructure/obsidian/commands-registry";
+import {registerVaultIndexEvents} from "../infrastructure/obsidian/vault-index-events";
 import {ENABLE_FIT_PARSER_SPIKE} from "../infrastructure/parsers/candidates/spike-config";
 import {
 	ENABLE_STORAGE_SCHEMA_SMOKE,
@@ -18,6 +20,15 @@ export async function bootstrapTrackdexPlugin(
 ): Promise<void> {
 	registerViews(plugin, container);
 	registerTrackdexCommands(plugin);
+
+	registerVaultIndexEvents({
+		plugin,
+		app: plugin.app,
+		getScanExcludePatterns: () => plugin.settings.scanExcludePatterns,
+		isScanPaused: async () => (await container.indexMeta.get()).scanPaused,
+		handler: createStubVaultTrackEventHandler(container.logger),
+		logger: container.logger,
+	});
 
 	plugin.addRibbonIcon("map", "Trackdex", () => {
 		void openTracksSidebar(plugin.app);

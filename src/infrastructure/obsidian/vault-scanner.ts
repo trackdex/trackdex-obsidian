@@ -24,6 +24,21 @@ export interface VaultFileCandidate {
 /**
  * Lists supported track files from vault file metadata (extension match is case-insensitive).
  */
+/** Whether a vault file path/name should participate in track indexing (§7.2). */
+export function isVaultTrackFileCandidate(
+	candidate: VaultFileCandidate,
+	options?: ListTrackFilesOptions,
+): boolean {
+	const path = normalizeVaultRelativePath(candidate.path);
+	const excludePatterns = resolveScanExcludePatterns(
+		options?.scanExcludePatterns,
+	);
+	if (isVaultPathExcluded(path, excludePatterns)) {
+		return false;
+	}
+	return matchTrackFileExtensionFromName(candidate.name) !== null;
+}
+
 export function listTrackFilesFromCandidates(
 	files: readonly VaultFileCandidate[],
 	options?: ListTrackFilesOptions,

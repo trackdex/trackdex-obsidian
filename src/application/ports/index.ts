@@ -10,6 +10,10 @@ export type {
 	DiscoveredTrackFile,
 	VaultScannerPort,
 } from "application/ports/vault-scanner-port";
+export type {
+	VaultTrackEvent,
+	VaultTrackEventHandlerPort,
+} from "application/ports/vault-track-event-handler-port";
 export type { IndexResetPort } from "application/ports/index-reset-port";
 export type {
 	IndexMetaRepository,
