@@ -12,10 +12,7 @@ import type {
 import { Platform } from "obsidian";
 import { resetIndex as runResetIndex } from "application/workflows/reset-index";
 import type { VaultTrackEventHandlerPort } from "application/ports/vault-track-event-handler-port";
-import {
-	createFullScanWorkQueue,
-	runFullScan,
-} from "application/workflows/full-scan";
+import { createFullScanWorkQueue } from "application/workflows/full-scan";
 import { createIncrementalVaultTrackEventHandler } from "application/workflows/incremental-index";
 import { createRotatingFileLoggerHandle } from "../infrastructure/logging";
 import { createNoopMetricsPort } from "../infrastructure/logging/noop-metrics-port";
@@ -116,25 +113,13 @@ export async function createTrackdexContainer(
 	const indexing = createIndexingService({
 		logger,
 		indexMeta,
-		enqueueFullScan: async () => {
-			await indexing.beginScanRun();
-			try {
-				const scanner = createObsidianVaultScanner(plugin.app, {
-					scanExcludePatterns: plugin.settings.scanExcludePatterns,
-				});
-				await runFullScan({
-					scanner,
-					tracks,
-					indexMeta,
-					clock,
-					queue: fullScanQueue,
-					isScanPaused: async () => (await indexMeta.get()).scanPaused,
-					logger,
-				});
-			} finally {
-				await indexing.completeScanRun();
-			}
-		},
+		tracks,
+		clock,
+		queue: fullScanQueue,
+		createScanner: () =>
+			createObsidianVaultScanner(plugin.app, {
+				scanExcludePatterns: plugin.settings.scanExcludePatterns,
+			}),
 	});
 	const placeReindex = createPlaceReindexService({ logger, places });
 	const linkIndex = createLinkIndexService({ logger, noteLinks });
