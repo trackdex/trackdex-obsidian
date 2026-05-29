@@ -48,6 +48,7 @@ export function createIndexingService(deps: IndexingServiceDeps): IndexingServic
 	const log = deps.logger.child?.({ service: "indexing" }) ?? deps.logger;
 	const scanProgress = createScanProgress();
 	let scanRunActive = false;
+	let approveFirstScanInFlight: Promise<void> | undefined;
 
 	const isScanPaused = async (): Promise<boolean> =>
 		(await deps.indexMeta.get()).scanPaused;
@@ -75,13 +76,19 @@ export function createIndexingService(deps: IndexingServiceDeps): IndexingServic
 		scanProgress,
 
 		async approveFirstScan(): Promise<void> {
-			const meta = await deps.indexMeta.get();
-			if (meta.firstScanApproved) {
-				return;
-			}
-			await deps.indexMeta.update({ firstScanApproved: true });
-			log.info("first scan approved");
-			await enqueueFullScan();
+			approveFirstScanInFlight ??= (async (): Promise<void> => {
+				try {
+					const claimed = await deps.indexMeta.tryApproveFirstScan();
+					if (!claimed) {
+						return;
+					}
+					log.info("first scan approved");
+					await enqueueFullScan();
+				} finally {
+					approveFirstScanInFlight = undefined;
+				}
+			})();
+			await approveFirstScanInFlight;
 		},
 
 		async scanTracksFolder(rootFolder: string): Promise<Result<IndexingScanResult, DomainError>> {

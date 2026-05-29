@@ -60,6 +60,13 @@ function createMetaRepo(initial = {}) {
 		update: async (partial) => {
 			meta = { ...meta, ...partial };
 		},
+		tryApproveFirstScan: async () => {
+			if (meta.firstScanApproved) {
+				return false;
+			}
+			meta = { ...meta, firstScanApproved: true };
+			return true;
+		},
 	};
 }
 

@@ -67,5 +67,18 @@ export function createSqlIndexMetaRepository(
 			);
 			await adapter.persist();
 		},
+
+		tryApproveFirstScan: async () => {
+			const db = adapter.getDatabase();
+			db.run(
+				`UPDATE ${INDEX_META_TABLE} SET first_scan_approved = 1 WHERE id = 1 AND first_scan_approved = 0`,
+			);
+			const changesResult = db.exec("SELECT changes() AS n");
+			const claimed = Number(changesResult[0]?.values[0]?.[0] ?? 0) > 0;
+			if (claimed) {
+				await adapter.persist();
+			}
+			return claimed;
+		},
 	};
 }

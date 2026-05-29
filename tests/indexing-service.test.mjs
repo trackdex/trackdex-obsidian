@@ -32,6 +32,13 @@ function createMetaRepo(
 		update: async (partial) => {
 			meta = { ...meta, ...partial };
 		},
+		tryApproveFirstScan: async () => {
+			if (meta.firstScanApproved) {
+				return false;
+			}
+			meta = { ...meta, firstScanApproved: true };
+			return true;
+		},
 	};
 }
 
@@ -119,6 +126,30 @@ test("indexing service: approveFirstScan skips enqueue when already approved", a
 
 	await indexing.approveFirstScan();
 	assert.equal((await tracks.list()).length, 0);
+});
+
+test("indexing service: concurrent approveFirstScan enqueues full scan once", async () => {
+	const indexMeta = createMetaRepo();
+	const tracks = createMemoryTrackRepo();
+	let listTrackFilesCalls = 0;
+	const indexing = createTestIndexingService({
+		indexMeta,
+		tracks,
+		deps: {
+			createScanner: () => ({
+				listTrackFiles: async () => {
+					listTrackFilesCalls += 1;
+					return [{ path: "tracks/a.gpx", extension: "gpx", mtimeMs: 100 }];
+				},
+			}),
+		},
+	});
+
+	await Promise.all([indexing.approveFirstScan(), indexing.approveFirstScan()]);
+
+	assert.equal((await indexMeta.get()).firstScanApproved, true);
+	assert.equal(listTrackFilesCalls, 1);
+	assert.equal((await tracks.findByPath("tracks/a.gpx"))?.status, "pending");
 });
 
 test("indexing service: beginScanRun write-ahead persists interrupted flag", async () => {

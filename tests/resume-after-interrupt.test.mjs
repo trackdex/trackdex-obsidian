@@ -25,6 +25,7 @@ test("resumeAfterInterrupt: no-op when flag is false", async () => {
 			update: async (partial) => {
 				meta = { ...meta, ...partial };
 			},
+			tryApproveFirstScan: async () => false,
 		},
 		enqueueFullScan: async () => {
 			enqueued += 1;
@@ -43,6 +44,7 @@ test("resumeAfterInterrupt: clears flag and enqueues full scan", async () => {
 			update: async (partial) => {
 				meta = { ...meta, ...partial };
 			},
+			tryApproveFirstScan: async () => false,
 		},
 		enqueueFullScan: async () => {
 			enqueued += 1;

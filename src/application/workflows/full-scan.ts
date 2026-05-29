@@ -132,8 +132,13 @@ async function runFullScanCore(
 			const transitioned = transitionFileStatus(existing.status, "content_changed");
 			if (transitioned.ok) {
 				await deps.tracks.updateStatus(file.path, transitioned.value);
-				pathsToIndex.push(file.path);
+			} else {
+				log?.warn("failed to mark indexed file stale after mtime change; enqueuing anyway", {
+					path: file.path,
+					reason: transitioned.error.message,
+				});
 			}
+			pathsToIndex.push(file.path);
 			continue;
 		}
 
