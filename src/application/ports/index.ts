@@ -6,6 +6,7 @@ export type {
 	PerfRunRecord,
 } from "application/ports/metrics-port";
 export type { ParseTrackInput, TrackParserPort } from "application/ports/parser-port";
+export type { IndexResetPort } from "application/ports/index-reset-port";
 export type {
 	IndexMetaRepository,
 	NoteLinkRepository,
