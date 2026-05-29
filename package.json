@@ -1,6 +1,6 @@
 {
 	"name": "trackdex-obsidian",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"description": "Read-only catalog of GPX tracks for Obsidian.",
 	"main": "main.js",
 	"type": "module",
