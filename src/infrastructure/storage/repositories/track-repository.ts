@@ -14,6 +14,7 @@ import {
 	TRACKS_TABLE,
 } from "../migrations/v1-schema";
 import type { SqlStorageAdapter } from "../storage-adapter";
+import { deleteNoteTrackLinksForTrackInDb } from "./note-track-link-repository";
 import {
 	assertTrackStatus,
 	rowToTrackRecord,
@@ -22,6 +23,7 @@ import {
 	trackRecordToRowParams,
 	type TracksTableRow,
 } from "./track-record-row";
+import { deleteTrackPlacesForTrackInDb } from "./track-place-repository";
 
 const INSERT_TRACK_SQL = `
 INSERT INTO ${TRACKS_TABLE} (${TRACK_ROW_INSERT_COLUMNS.join(", ")})
@@ -294,6 +296,8 @@ export function createSqlTrackRepository(adapter: SqlStorageAdapter): TrackRepos
 
 		deleteByPath: async (path) => {
 			const db = adapter.getDatabase();
+			deleteTrackPlacesForTrackInDb(db, path);
+			deleteNoteTrackLinksForTrackInDb(db, path);
 			db.run(`DELETE FROM ${TRACKS_TABLE} WHERE path = ?`, [path]);
 			await adapter.persist();
 		},

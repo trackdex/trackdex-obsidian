@@ -140,13 +140,32 @@ test("track repository: upsert updates existing row", async () => {
 	db.close();
 });
 
-test("track repository: deleteByPath removes row", async () => {
+test("track repository: deleteByPath removes row and cascades relations", async () => {
 	const { db } = await openMigratedDatabase();
 	const repo = createSqlTrackRepository(createTestStorageAdapter(db));
 
 	await repo.upsert(SAMPLE_TRACK);
+	db.run(
+		`INSERT INTO ${TRACK_PLACES_TABLE} (track_path, place_note_path) VALUES (?, ?)`,
+		[SAMPLE_TRACK.path, "places/cafe.md"],
+	);
+	db.run(
+		`INSERT INTO ${NOTE_TRACK_LINKS_TABLE} (note_path, track_path, link_text) VALUES (?, ?, ?)`,
+		["notes/trip.md", SAMPLE_TRACK.path, "ride"],
+	);
+
 	await repo.deleteByPath(SAMPLE_TRACK.path);
 	assert.equal(await repo.findByPath(SAMPLE_TRACK.path), null);
+
+	const tp = db.exec(
+		`SELECT COUNT(*) FROM ${TRACK_PLACES_TABLE} WHERE track_path = '${SAMPLE_TRACK.path}'`,
+	);
+	assert.equal(tp[0].values[0][0], 0);
+
+	const links = db.exec(
+		`SELECT COUNT(*) FROM ${NOTE_TRACK_LINKS_TABLE} WHERE track_path = '${SAMPLE_TRACK.path}'`,
+	);
+	assert.equal(links[0].values[0][0], 0);
 
 	db.close();
 });
