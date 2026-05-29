@@ -4,6 +4,13 @@ const ATTRIBUTION_ROOT_CLASS = "trackdex-track-stub__attribution";
 const ATTRIBUTION_TILES_CLASS = "trackdex-track-stub__attribution-tiles";
 const ATTRIBUTION_LEGAL_CLASS = "trackdex-track-stub__attribution-legal";
 
+function appendHtmlFragment(container: HTMLElement, html: string): void {
+	const doc = new DOMParser().parseFromString(html, "text/html");
+	for (const node of Array.from(doc.body.childNodes)) {
+		container.appendChild(node);
+	}
+}
+
 export interface TrackMapAttributionState {
 	readonly showTileAttribution: boolean;
 }
@@ -32,7 +39,7 @@ export function renderTrackMapAttribution(
 	container.addClass(ATTRIBUTION_ROOT_CLASS);
 
 	const tilesEl = container.createDiv({cls: ATTRIBUTION_TILES_CLASS});
-	tilesEl.innerHTML = tileAttributionHtml;
+	appendHtmlFragment(tilesEl, tileAttributionHtml);
 
 	const legalEl = container.createDiv({cls: ATTRIBUTION_LEGAL_CLASS});
 	legalEl.createSpan({text: t("views.trackMapAttributionLegalBeforeLink")});

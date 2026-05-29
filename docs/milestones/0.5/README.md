@@ -45,10 +45,10 @@ flowchart TD
 
 | Поле | Значение |
 |------|----------|
-| **Дата** | _TBD_ |
-| **Версия** | _TBD_ (`manifest.json`) |
-| **Результат** | _TBD_ (PASS/FAIL) |
-| **Коммит** | _TBD_ |
+| **Дата** | 2026-05-29 |
+| **Версия** | 0.0.4 (`manifest.json`) |
+| **Результат** | PASS |
+| **Коммит** | `docs(0.5-08): milestone 0.5 acceptance PASS` (see `git log`) |
 
 ### Prerequisite
 
