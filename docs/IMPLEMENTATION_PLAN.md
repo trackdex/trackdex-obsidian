@@ -107,6 +107,11 @@ Scope:
 - Aggregate multi-segment/multi-track files as one catalog record and persist segment metadata for the view.
 - Persist data flags for missing fields.
 - Polyline simplification + bbox generation.
+- Retire FIT parser **spike** artifacts once production parsers are wired and tested:
+  - remove **`@garmin-fit/sdk`** (rejected alternate — fails on compressed-timestamp FIT from recent Garmin exports; evidence in `docs/milestones/0.1/evidence/fit-parser-spike.md`);
+  - remove `garmin-sdk-candidate`, `fit-spike-garmin-sdk` command, garmin bundle measure entry, and `src/types/garmin-fit-sdk.d.ts`;
+  - keep **`fit-file-parser`** as the only FIT library in `package.json` (move from devDependency to runtime dependency when bundled in **0.4**);
+  - fold or replace spike tests/commands for `fit-file-parser` with production parser fixture tests; set `ENABLE_FIT_PARSER_SPIKE` default `false` and delete spike-only modules when no longer needed.
 
 Deliverables:
 - Indexed tracks with complete computed metric fields.
@@ -117,6 +122,7 @@ Done criteria:
 - FIT/FIT.GZ fixture tests are included when those formats remain in v1 scope.
 - Same file produces stable metrics across reindex runs.
 - Missing data is explicit, no fallback synthesis.
+- No `@garmin-fit/sdk` (or `@garmin/fitsdk`) in `package.json`; FIT spike code path does not reference Garmin SDK.
 
 ## Milestone 0.5 — Track view (file open -> map + stats)
 

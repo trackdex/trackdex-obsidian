@@ -57,7 +57,7 @@ Out-of-scope items remain as defined in requirements.
 | **Primary parser library** | **`fit-file-parser`** (npm) — ES module; maps to `ParsedTrack` via infrastructure adapter |
 | **`.fit.gz` decompress** | `DecompressionStream('gzip')` on raw vault bytes, then parse FIT binary — no Node `zlib` / `fs` in plugin path ([`gunzip.ts`](../src/infrastructure/parsers/candidates/gunzip.ts) spike) |
 | **Production modules (0.4)** | `fit-parser.ts` + `fit-gz-parser.ts` (or shared decompress helper) behind `parser-router.ts`; domain/application use `TrackParserPort` only |
-| **Alternate (not v1 primary)** | **`@garmin-fit/sdk`** — larger bundle (~0.31 MB isolated vs ~0.13 MB); numeric sport enums need profile lookup; kept as spike reference only |
+| **Alternate (not v1 primary)** | **`@garmin-fit/sdk`** — larger bundle (~0.31 MB isolated vs ~0.13 MB); numeric sport enums need profile lookup; spike reference only — **remove in milestone 0.4** after production `fit-file-parser` wiring (fails on compressed-timestamp FIT; see `docs/IMPLEMENTATION_PLAN.md` §0.4) |
 | **`manifest.json` `isDesktopOnly`** | **`false`** — unchanged; parser path must not rely on desktop-only APIs |
 | **Gate status** | **Go with constraints** — Node fixture parse PASS for both candidates; Obsidian desktop/mobile manual smoke **not run** at spike time (see constraints below) |
 

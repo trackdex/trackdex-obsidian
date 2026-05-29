@@ -13,6 +13,7 @@
 | **`.fit.gz` strategy** | `DecompressionStream('gzip')` on raw vault bytes, then parse FIT binary (no Node `zlib` in plugin path) |
 | **Gate status** | **Closed (0.1-06)** — go with constraints; recorded in `docs/TECHNICAL_DESIGN.md` §2.5; Obsidian manual smoke still pending before 0.4/release |
 | **Production wiring** | Deferred to **0.4**; spike behind `ENABLE_FIT_PARSER_SPIKE` (default `false`) |
+| **Garmin SDK removal** | Planned **0.4** — drop `@garmin-fit/sdk` and spike-only Garmin code after production `fit-file-parser` lands (`docs/IMPLEMENTATION_PLAN.md` §0.4) |
 
 **Constraints for v1:** bundle adds ~0.13 MB (fit-file-parser) on top of current `main.js`; validate cold-parse time and memory on Android with real user FIT files before **0.4** / release (manual smoke plan below).
 
