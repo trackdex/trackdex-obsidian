@@ -27,6 +27,7 @@ export default tseslint.config(
 		"dist",
 		"scripts/build.mjs",
 		"scripts/deploy.mjs",
+		"scripts/deploy-android.mjs",
 		"eslint.config.js",
 		"scripts/version-bump.mjs",
 		"versions.json",
@@ -35,6 +36,10 @@ export default tseslint.config(
 	]),
 	{
 		files: ["**/*.ts", "**/*.tsx"],
+		settings: {
+			// baseUrl imports (src/domain/...) must not match Node's "domain" builtin.
+			"import/internal-regex": "^domain/",
+		},
 		plugins: {
 			obsidianmd,
 		},
@@ -42,7 +47,7 @@ export default tseslint.config(
 			"obsidianmd/ui/sentence-case": [
 				"error",
 				{
-					acronyms: ["GPX", "URL"],
+					acronyms: ["FIT", "GPX", "URL"],
 					brands: ["Trackdex"],
 					allowAutoFix: true,
 				},

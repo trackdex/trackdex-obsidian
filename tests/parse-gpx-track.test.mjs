@@ -10,7 +10,7 @@ const {
 	parseGpxTrackPoints,
 	extractTrkptsFromDocument,
 	isValidGpxCoordinate,
-} = importTs("../src/parsers/parse-gpx-track.ts");
+} = importTs("../src/infrastructure/parsers/gpx-parser.ts");
 
 const GPX_NS = "http://www.topografix.com/GPX/1/1";
 

@@ -1,5 +1,9 @@
 # Trackdex
 
+[![tests](https://img.shields.io/github/actions/workflow/status/trackdex/trackdex-obsidian/lint.yml?branch=main&label=tests)](https://github.com/trackdex/trackdex-obsidian/actions/workflows/lint.yml?query=branch%3Amain)
+
+Trackdex — your track index. An Obsidian-based local catalog for GPX, FIT, and more.
+
 Read-only catalog of GPX tracks in your Obsidian vault: browse files, view tracks on a map, filter by region, and see stats.
 
 ## Install
@@ -13,7 +17,23 @@ npm install
 npm run dev
 ```
 
-Build for release: `npm run build`. Deploy to the local dev vault: `npm run deploy:dev`.
+Build for release: `npm run build`. Deploy to the local dev vault: `npm run deploy:dev`. Push the dev vault to a connected Android device: `npm run deploy:android`.
+
+## Source layout (0.1-01)
+
+Plugin source follows layered modules under `src/`:
+
+- `composition/` — DI bootstrap (stub until milestone 0.1-07)
+- `application/` — use-cases and ports (placeholders)
+- `domain/` — pure business logic (placeholders)
+- `infrastructure/` — map (Leaflet), parsers (GPX), storage, logging, Obsidian adapters (placeholders where not yet implemented)
+- `ui/` — views, settings tab, components, i18n (placeholders for i18n)
+
+Prototype code moved in 0.1-01: track view and registration (`ui/views/`), settings (`ui/settings/`), view helpers (`ui/components/`), map (`infrastructure/map/`), GPX parser (`infrastructure/parsers/gpx-parser.ts`).
+
+Outside layers (unchanged): `src/constants.ts`, `src/styles/track-view.css`.
+
+Prototype settings and demo commands were removed in **0.1-13**; v1 settings UI is planned for milestone **0.9**. No legacy re-export shims (`src/map`, `src/parsers`, etc.) — imports use the paths above.
 
 ## Releases
 
@@ -34,6 +54,8 @@ First-time listing in the community catalog: follow [Submit your plugin](https:/
 - `npm run deploy` - деплой через `scripts/deploy.mjs`.
 - `npm run deploy:dev` - деплой в dev-хранилище (`trackdex-dev-vault`).
 - `npm version` (patch/minor/major) — lifecycle hook `version` runs `scripts/version-bump.mjs` and stages `manifest.json` / `versions.json`; do not call `npm run version` manually.
+- `npm run deploy:android` - `deploy:dev`, затем push `trackdex-dev-vault` на устройство в `/sdcard/trackdex-dev-vault` (нужен `adb` в PATH, ровно одно USB-устройство с отладкой; при отсутствии Obsidian — скачивание и установка APK).
+- `npm run version` - bump версии через `scripts/version-bump.mjs` + `git add manifest.json versions.json`.
 - `npm run lint` - запуск ESLint по проекту.
 
 ## License

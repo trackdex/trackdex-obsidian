@@ -43,8 +43,8 @@ Done criteria:
 - `npm run build` passes.
 - Smoke test still passes.
 - No direct storage-adapter imports outside infrastructure layer.
-- Milestone 0.2 is blocked until the storage adapter decision is recorded, including whether v1 remains `isDesktopOnly: false` or intentionally becomes desktop-only.
-- Milestone 0.4 is blocked until the FIT/FIT.GZ parser decision is recorded or v1 format scope is explicitly changed.
+- Milestone 0.2 storage gate: **closed** in `docs/TECHNICAL_DESIGN.md` §2.1 (sql.js + `index.sqlite`, `isDesktopOnly: false`); 0.2 starts after 0.1-09 bootstrap skeleton lands.
+- Milestone 0.4 FIT gate: **closed** in `docs/TECHNICAL_DESIGN.md` §2.5 (`fit-file-parser`, `.fit` + `.fit.gz` in v1 scope, `DecompressionStream` for gzip); production parser wiring is **0.4**.
 
 ## Milestone 0.2 — Storage schema and indexing meta
 
@@ -98,8 +98,8 @@ Scope:
 - Implement parser router and format parsers:
   - GPX
   - TCX
-  - FIT (if feasibility gate passed)
-  - FIT.GZ (if feasibility gate passed)
+  - FIT (§2.5 — `fit-file-parser`)
+  - FIT.GZ (§2.5 — gzip decompress + `fit-file-parser`)
 - Normalize timestamps/timezones and raw values.
 - Compute metrics (computed-only pipeline):
   - date, elapsed, distance, avg/max speed, elevation gain/loss (3m threshold),
@@ -107,6 +107,11 @@ Scope:
 - Aggregate multi-segment/multi-track files as one catalog record and persist segment metadata for the view.
 - Persist data flags for missing fields.
 - Polyline simplification + bbox generation.
+- Retire FIT parser **spike** artifacts once production parsers are wired and tested:
+  - remove **`@garmin-fit/sdk`** (rejected alternate — fails on compressed-timestamp FIT from recent Garmin exports; evidence in `docs/milestones/0.1/evidence/fit-parser-spike.md`);
+  - remove `garmin-sdk-candidate`, `fit-spike-garmin-sdk` command, garmin bundle measure entry, and `src/types/garmin-fit-sdk.d.ts`;
+  - keep **`fit-file-parser`** as the only FIT library in `package.json` (move from devDependency to runtime dependency when bundled in **0.4**);
+  - fold or replace spike tests/commands for `fit-file-parser` with production parser fixture tests; set `ENABLE_FIT_PARSER_SPIKE` default `false` and delete spike-only modules when no longer needed.
 
 Deliverables:
 - Indexed tracks with complete computed metric fields.
@@ -117,6 +122,7 @@ Done criteria:
 - FIT/FIT.GZ fixture tests are included when those formats remain in v1 scope.
 - Same file produces stable metrics across reindex runs.
 - Missing data is explicit, no fallback synthesis.
+- No `@garmin-fit/sdk` (or `@garmin/fitsdk`) in `package.json`; FIT spike code path does not reference Garmin SDK.
 
 ## Milestone 0.5 — Track view (file open -> map + stats)
 

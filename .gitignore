@@ -6,6 +6,7 @@ node_modules/
 main.js
 styles.css
 *.map
+main.js.*.tmp
 
 # --- Obsidian plugin runtime (in a vault, not this repo) ---
 data.json
@@ -47,8 +48,10 @@ ehthumbs.db
 *.swp
 *~
 
-# Cursor local state (project rules live in AGENTS.md / committed docs)
-.cursor/
+# Cursor local state; committed project rules live under .cursor/rules/
+.cursor/*
+!.cursor/rules/
+!.cursor/rules/**
 
 # --- Optional output dirs ---
 dist/
