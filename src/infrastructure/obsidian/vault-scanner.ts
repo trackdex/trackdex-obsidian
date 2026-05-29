@@ -19,6 +19,7 @@ export interface ListTrackFilesOptions {
 export interface VaultFileCandidate {
 	readonly path: string;
 	readonly name: string;
+	readonly mtimeMs?: number;
 }
 
 /**
@@ -57,7 +58,7 @@ export function listTrackFilesFromCandidates(
 		if (!extension) {
 			continue;
 		}
-		discovered.push({ path, extension });
+		discovered.push({ path, extension, mtimeMs: file.mtimeMs ?? 0 });
 	}
 
 	discovered.sort((a, b) => a.path.localeCompare(b.path));
@@ -82,6 +83,7 @@ export function createObsidianVaultScanner(
 				.map((file: TFile): VaultFileCandidate => ({
 					path: file.path,
 					name: file.name,
+					mtimeMs: file.stat.mtime,
 				}));
 			return Promise.resolve(
 				listTrackFilesFromCandidates(candidates, listOptions),

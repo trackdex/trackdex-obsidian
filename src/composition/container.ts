@@ -9,10 +9,16 @@ import type {
 	PlaceRepository,
 	TrackRepository,
 } from "application/ports/repositories";
+import { Platform } from "obsidian";
 import { resetIndex as runResetIndex } from "application/workflows/reset-index";
+import {
+	createFullScanWorkQueue,
+	runFullScan,
+} from "application/workflows/full-scan";
 import { createRotatingFileLoggerHandle } from "../infrastructure/logging";
 import { createNoopMetricsPort } from "../infrastructure/logging/noop-metrics-port";
 import { createSystemClockPort } from "../infrastructure/logging/system-clock-port";
+import { createObsidianVaultScanner } from "../infrastructure/obsidian/vault-scanner";
 import { createNoopTrackParserPort } from "../infrastructure/parsers/noop-track-parser-port";
 import {
 	SqlStorageAdapter,
@@ -100,13 +106,28 @@ export async function createTrackdexContainer(
 		storage = null;
 	}
 
+	const fullScanQueue = createFullScanWorkQueue({
+		isMobile: Platform.isMobileApp,
+	});
+
 	const indexing = createIndexingService({
 		logger,
 		indexMeta,
 		enqueueFullScan: async () => {
 			await indexing.beginScanRun();
 			try {
-				logger.info("full scan (stub until 0.3-08)");
+				const scanner = createObsidianVaultScanner(plugin.app, {
+					scanExcludePatterns: plugin.settings.scanExcludePatterns,
+				});
+				await runFullScan({
+					scanner,
+					tracks,
+					indexMeta,
+					clock,
+					queue: fullScanQueue,
+					isScanPaused: async () => (await indexMeta.get()).scanPaused,
+					logger,
+				});
 			} finally {
 				await indexing.completeScanRun();
 			}

@@ -19,7 +19,7 @@ export async function bootstrapTrackdexPlugin(
 	container: TrackdexContainer,
 ): Promise<void> {
 	registerViews(plugin, container);
-	registerTrackdexCommands(plugin);
+	registerTrackdexCommands(plugin, container);
 
 	registerVaultIndexEvents({
 		plugin,

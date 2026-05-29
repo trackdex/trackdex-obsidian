@@ -5,6 +5,7 @@ import type { TrackPath } from "domain/track/track-record";
 export interface DiscoveredTrackFile {
 	readonly path: TrackPath;
 	readonly extension: TrackFileExtension;
+	readonly mtimeMs: number;
 }
 
 /**

@@ -3,3 +3,11 @@ export {
 	resumeAfterInterrupt,
 	type ResumeAfterInterruptDeps,
 } from "./resume-after-interrupt";
+export {
+	createFullScanWorkQueue,
+	runFullScan,
+	type CreateFullScanQueueOptions,
+	type FullScanResult,
+	type IndexTrackFileJob,
+	type RunFullScanDeps,
+} from "./full-scan";

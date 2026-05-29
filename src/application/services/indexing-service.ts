@@ -15,6 +15,7 @@ export interface IndexingService {
 	scanTracksFolder(rootFolder: string): Promise<Result<IndexingScanResult, DomainError>>;
 	pauseIndexing(): Promise<void>;
 	resumeIndexing(): Promise<void>;
+	scanOrResumeIndexing(): Promise<void>;
 	beginScanRun(): Promise<void>;
 	completeScanRun(): Promise<void>;
 	markInterruptedIfScanActive(): Promise<void>;
@@ -62,6 +63,23 @@ export function createIndexingService(deps: IndexingServiceDeps): IndexingServic
 		async resumeIndexing(): Promise<void> {
 			log.info("resumeIndexing (stub)");
 			await deps.indexMeta.update({ scanPaused: false });
+		},
+
+		async scanOrResumeIndexing(): Promise<void> {
+			const meta = await deps.indexMeta.get();
+			if (meta.lastRunInterrupted) {
+				await this.resumeAfterInterrupt();
+				return;
+			}
+			if (meta.scanPaused) {
+				log.info("scanOrResumeIndexing skipped: indexing paused");
+				return;
+			}
+			if (deps.enqueueFullScan) {
+				await deps.enqueueFullScan();
+			} else {
+				log.info("enqueueFullScan not wired (0.3-08)");
+			}
 		},
 
 		async beginScanRun(): Promise<void> {
