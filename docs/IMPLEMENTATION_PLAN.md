@@ -14,7 +14,7 @@
 | Milestone | Статус задач | Задач |
 |-----------|----------------|-------|
 | [0.1 — Foundation](milestones/0.1/README.md) | **0.1-14 PASS** (2026-05-29) | 14 |
-| [0.2 — Storage schema](milestones/0.2/README.md) | TBD | 12 |
+| [0.2 — Storage schema](milestones/0.2/README.md) | **0.2-12 PASS** (2026-05-29) | 12 |
 | [0.3 — Scan engine](milestones/0.3/README.md) | TBD | 12 |
 | [0.4 — Parsers & metrics](milestones/0.4/README.md) | TBD | 14 |
 | [0.5 — Track view](milestones/0.5/README.md) | TBD | 8 |

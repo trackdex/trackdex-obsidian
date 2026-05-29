@@ -55,11 +55,62 @@ flowchart TD
 
 | Поле | Значение |
 |------|----------|
-| **Дата** | _TBD_ |
-| **Версия** | _TBD_ (`manifest.json`) |
-| **Результат** | _TBD_ (PASS/FAIL) |
-| **Коммит** | _TBD_ |
+| **Дата** | 2026-05-29 |
+| **Версия** | 0.0.1 (`manifest.json`) |
+| **Результат** | **PASS** |
+| **Коммит** | `0.2-12: milestone 0.2 acceptance gate` (see `git log`) |
 
 ### Prerequisite
 
 - Milestone **0.1** complete (**0.1-14** PASS).
+
+### Automated checks (2026-05-29)
+
+| Check | Result |
+|-------|--------|
+| `npm run build` | PASS (exit 0; incl. `test:bundle` 5 tests) |
+| `npm test` | PASS (73 unit + 5 bundle integrity; exit 0) |
+| Import architecture gate | PASS (`tests/import-boundaries.test.mjs`: `sql.js` / parser libs only under `src/infrastructure/**`; `application/` + `domain/` clean; `composition/` no direct `sql.js`) |
+
+### Deliverables IMPLEMENTATION_PLAN (0.2)
+
+| Deliverable | Result |
+|-------------|--------|
+| v1 schema + §6.1 query indexes (**0.2-01**, **0.2-06**) | PASS — `migrations/v1-schema.ts`, migration tests |
+| Migration v1 runner on startup (**0.2-02**) | PASS — `runMigrations`, idempotent onload, rollback test |
+| Index meta repository (**0.2-03**) | PASS — `first_scan_approved`, `scan_paused`, `last_run_interrupted`, `last_full_scan_at_utc` |
+| Track / place / link repositories (**0.2-04**, **0.2-05**) | PASS — CRUD + cascade tests |
+| Rotating file logs 5 × 1 MB (**0.2-07**) | PASS — `file-logger.ts`, `tests/log-rotation.test.mjs` |
+| Reset index (service data only) (**0.2-08**) | PASS — `reset-index` workflow + mtime test |
+| Container wiring (**0.2-09**) | PASS — open → migrate → SQL repos on `onload` |
+| README data dir / sync / logs (**0.2-10**) | PASS — `README.md` § Plugin data |
+| Storage smoke desktop/mobile (**0.2-11**) | PASS — [evidence/storage-schema-smoke.md](./evidence/storage-schema-smoke.md) |
+
+### Done criteria (summary)
+
+| Criterion | Result |
+|-----------|--------|
+| Fresh vault → schema v1 | PASS — `storage-migrations`, `storage-schema-smoke` tests |
+| Existing DB upgrade path | PASS — export/import + schema version checks |
+| Reset index removes only service data | PASS — `reset-index.test.mjs` |
+| Desktop/mobile storage smoke | PASS — automated 2026-05-29; optional manual Obsidian steps documented |
+| README: data dir, sync, log rotation | PASS |
+
+### Cross-milestone gates (storage layer)
+
+| Gate | Result | Notes |
+|------|--------|-------|
+| Track files read-only | PASS | Reset workflow does not touch vault track mtimes; index-only writes |
+| Missing data explicit | PASS (schema) | `data_flags` JSON column per §6.1; parser fill in **0.4** |
+| Broken files visible with diagnostics | PASS (schema) | `tracks.status` + `error_message`; `updateStatus` tests |
+
+### Gates для следующих milestones
+
+| Gate | Status |
+|------|--------|
+| **0.3 разблокирован** (repos + `index_meta` for scan) | **OPEN** — `TrackRepository`, `IndexMetaRepository` wired in `container.ts` |
+
+### Manual smoke notes
+
+- Obsidian desktop/mobile operator sessions for 0.2-11 dev commands: **optional** (automated PASS documented in evidence).
+- Android: derived PASS from **0.1-03** + same sql.js adapter stack; explicit 0.2 mobile session not required for gate.
