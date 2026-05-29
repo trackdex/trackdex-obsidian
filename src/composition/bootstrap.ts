@@ -1,5 +1,6 @@
 import {Editor, MarkdownView, Notice} from "obsidian";
 import {TrackdexOverviewModal} from "../ui/components/trackdex-overview-modal";
+import {t} from "../ui/i18n";
 import {TrackdexSettingTab} from "../ui/settings/settings-tab";
 import {registerTrackView} from "../ui/views/register-track-view";
 import type {TrackdexContainer} from "./container";
@@ -21,7 +22,7 @@ export async function bootstrapTrackdexPlugin(
 
 	plugin.addCommand({
 		id: "open-trackdex-overview",
-		name: "Open overview",
+		name: t("commands.openOverview"),
 		callback: () => {
 			new TrackdexOverviewModal(plugin.app).open();
 		},
@@ -29,7 +30,7 @@ export async function bootstrapTrackdexPlugin(
 
 	plugin.addCommand({
 		id: "insert-trackdex-tag",
-		name: "Insert marker",
+		name: t("commands.insertMarker"),
 		editorCallback: (editor: Editor, _view: MarkdownView) => {
 			editor.replaceSelection("#trackdex");
 		},
@@ -37,7 +38,7 @@ export async function bootstrapTrackdexPlugin(
 
 	plugin.addCommand({
 		id: "scan-tracks-folder",
-		name: "Scan tracks folder",
+		name: t("commands.scanTracksFolder"),
 		checkCallback: (checking: boolean) => {
 			const markdownView = plugin.app.workspace.getActiveViewOfType(MarkdownView);
 			if (markdownView) {

@@ -1,7 +1,8 @@
 import {App, PluginSettingTab, Setting} from "obsidian";
+import type {TrackdexPluginHost} from "../../composition/plugin-host";
 import {DEFAULT_BASEMAP_TILE_URL} from "../../constants";
 import {normalizeBasemapTileUrl} from "../../infrastructure/map/track-basemap";
-import type {TrackdexPluginHost} from "../../composition/plugin-host";
+import {t} from "../i18n";
 
 export interface TrackdexSettings {
 	tracksFolder: string;
@@ -39,8 +40,8 @@ export class TrackdexSettingTab extends PluginSettingTab {
 		containerEl.empty();
 
 		new Setting(containerEl)
-			.setName("Tracks folder")
-			.setDesc("Folder with GPX files inside your vault")
+			.setName(t("settings.tracksFolderName"))
+			.setDesc(t("settings.tracksFolderDesc"))
 			.addText(text => text
 				.setPlaceholder(DEFAULT_SETTINGS.tracksFolder)
 				.setValue(this.plugin.settings.tracksFolder)
@@ -50,11 +51,8 @@ export class TrackdexSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
-			.setName("Basemap tile URL")
-			.setDesc(
-				"Raster tile template with {z}, {x}, {y} (default: OpenStreetMap). " +
-				"MapLibre/OpenFreeMap style URLs are not supported in Obsidian.",
-			)
+			.setName(t("settings.basemapTileUrlName"))
+			.setDesc(t("settings.basemapTileUrlDesc"))
 			.addText(text => text
 				.setPlaceholder(DEFAULT_BASEMAP_TILE_URL)
 				.setValue(this.plugin.settings.basemapTileUrl)
