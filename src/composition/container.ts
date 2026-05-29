@@ -65,7 +65,9 @@ export async function createTrackdexContainer(
 ): Promise<TrackdexContainer> {
 	const disposers: Array<() => void> = [];
 
-	const { port: logger, flush: flushLogger } = createRotatingFileLoggerHandle(plugin);
+	const loggerHandle = createRotatingFileLoggerHandle(plugin);
+	const logger = loggerHandle.port;
+	const flushLogger = (): Promise<void> => loggerHandle.flush();
 	const clock = createSystemClockPort();
 	const metrics = createNoopMetricsPort();
 	const trackParser = createNoopTrackParserPort();

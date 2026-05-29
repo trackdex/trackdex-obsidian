@@ -5,7 +5,6 @@ import type {
 	TrackPath,
 	TrackRecord,
 } from "domain/track/track-record";
-import type { TrackStatus } from "domain/track/track-status";
 import type { SqlValue } from "sql.js";
 import type { SqlJsDatabase } from "../candidates/sql-js-init";
 import {
