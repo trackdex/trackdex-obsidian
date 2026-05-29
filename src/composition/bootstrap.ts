@@ -3,20 +3,21 @@ import {registerTrackdexCommands} from "../infrastructure/obsidian/commands-regi
 import {TrackdexOverviewModal} from "../ui/components/trackdex-overview-modal";
 import {t} from "../ui/i18n";
 import {TrackdexSettingTab} from "../ui/settings/settings-tab";
-import {registerTrackView} from "../ui/views/register-track-view";
+import {openTracksSidebar} from "../ui/views/open-tracks-sidebar";
 import type {TrackdexContainer} from "./container";
 import type {TrackdexPluginHost} from "./plugin-host";
+import {registerViews} from "./register-views";
 
 /** Registers views, commands, and optional dev spikes via the plugin host. */
 export async function bootstrapTrackdexPlugin(
 	plugin: TrackdexPluginHost,
-	_container: TrackdexContainer,
+	container: TrackdexContainer,
 ): Promise<void> {
-	registerTrackView(plugin);
+	registerViews(plugin, container);
 	registerTrackdexCommands(plugin);
 
 	plugin.addRibbonIcon("map", "Trackdex", () => {
-		new Notice("Trackdex: open track catalog (coming soon)");
+		void openTracksSidebar(plugin.app);
 	});
 
 	const statusBarItemEl = plugin.addStatusBarItem();
@@ -27,6 +28,14 @@ export async function bootstrapTrackdexPlugin(
 		name: t("commands.openOverview"),
 		callback: () => {
 			new TrackdexOverviewModal(plugin.app).open();
+		},
+	});
+
+	plugin.addCommand({
+		id: "open-tracks-sidebar",
+		name: t("commands.openTracksSidebar"),
+		callback: () => {
+			void openTracksSidebar(plugin.app);
 		},
 	});
 

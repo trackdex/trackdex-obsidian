@@ -13,17 +13,23 @@ import {
 	addTrackRouteLayer,
 	type TrackRouteLayer,
 } from "../../infrastructure/map/track-route-layer";
+import type {TrackQueryService} from "../../application/services/track-query-service";
 import {parseGpxTrackPoints} from "../../infrastructure/parsers/gpx-parser";
 import type {TrackdexPluginHost} from "../../composition/plugin-host";
+import {t} from "../i18n";
+import {getTrackFileExtension} from "./track-file-extension";
 import {
 	refreshViewNavButtons,
 	syncViewHeaderTitle,
 } from "../components/file-view-nav";
 import {preserveSettingsFocus} from "../components/preserve-settings-focus";
 
-export class TrackStubView extends TextFileView {
+export class TrackView extends TextFileView {
 	private basemap: TrackBasemap | null = null;
 	private routeLayer: TrackRouteLayer | null = null;
+	private layoutEl: HTMLElement | null = null;
+	private statsPlaceholderEl: HTMLElement | null = null;
+	private mapColumnEl: HTMLElement | null = null;
 	private mapContainerEl: HTMLElement | null = null;
 	private mapWrapEl: HTMLElement | null = null;
 	private mapErrorEl: HTMLElement | null = null;
@@ -67,6 +73,7 @@ export class TrackStubView extends TextFileView {
 	constructor(
 		leaf: WorkspaceLeaf,
 		private readonly plugin: TrackdexPluginHost,
+		private readonly trackQuery: TrackQueryService,
 	) {
 		super(leaf);
 		this.navigation = true;
@@ -110,6 +117,9 @@ export class TrackStubView extends TextFileView {
 		this.renderedFilePath = null;
 		this.pendingMapView = null;
 		this.restoredMapViewFromHistory = false;
+		this.layoutEl = null;
+		this.mapColumnEl = null;
+		this.statsPlaceholderEl = null;
 		this.contentEl.empty();
 	}
 
@@ -123,7 +133,7 @@ export class TrackStubView extends TextFileView {
 		this.registerDomEvent(window, "resize", this.onWindowResize);
 		this.registerEvent(
 			this.app.workspace.on("resize", () => {
-				if (this.app.workspace.getActiveViewOfType(TrackStubView) === this) {
+				if (this.app.workspace.getActiveViewOfType(TrackView) === this) {
 					this.scheduleMapRefresh(false);
 				}
 			}),
@@ -149,6 +159,7 @@ export class TrackStubView extends TextFileView {
 				refreshViewNavButtons(this);
 			}),
 		);
+		void this.refreshStatsPlaceholder();
 	}
 
 	async onClose(): Promise<void> {
@@ -274,15 +285,36 @@ export class TrackStubView extends TextFileView {
 
 		const el = this.contentEl;
 		el.empty();
-		el.addClass("trackdex-track-stub");
+		el.addClass("trackdex-track-view");
 
-		const mapWrap = el.createDiv({cls: "trackdex-track-stub__map-wrap"});
+		const layout = el.createDiv({cls: "trackdex-track-view__layout"});
+		this.layoutEl = layout;
+
+		const mapColumn = layout.createDiv({cls: "trackdex-track-view__map-column"});
+		this.mapColumnEl = mapColumn;
+		mapColumn.createDiv({
+			cls: "trackdex-track-view__mobile-hint",
+			text: t("views.trackMobileTabsHint"),
+		});
+
+		const mapWrap = mapColumn.createDiv({cls: "trackdex-track-stub__map-wrap"});
 		this.mapWrapEl = mapWrap;
 		this.mapContainerEl = mapWrap.createDiv({cls: "trackdex-track-stub__map"});
 		this.mapErrorEl = mapWrap.createDiv({
 			cls: "trackdex-track-stub__map-error",
 		});
 		this.mapErrorEl.hide();
+
+		this.statsPlaceholderEl = layout.createDiv({
+			cls: "trackdex-track-view__stats-placeholder",
+		});
+		void this.refreshStatsPlaceholder();
+
+		const trackExt = this.file ? getTrackFileExtension(this.file) : null;
+		if (trackExt !== "gpx") {
+			this.showMapError(t("views.trackPreviewComingSoon"), true);
+			return;
+		}
 
 		const generation = ++this.mapInitGeneration;
 		const tileUrl = this.getBasemapTileUrl();
@@ -297,6 +329,20 @@ export class TrackStubView extends TextFileView {
 			}
 			this.initMap(tileUrl);
 		});
+	}
+
+	private async refreshStatsPlaceholder(): Promise<void> {
+		if (!this.statsPlaceholderEl || this.isClosing) {
+			return;
+		}
+		try {
+			const tracks = await this.trackQuery.listTracks();
+			this.statsPlaceholderEl.setText(
+				t("views.trackStatsPlaceholder", {count: tracks.length}),
+			);
+		} catch {
+			this.statsPlaceholderEl.setText(t("views.trackStatsPlaceholder", {count: 0}));
+		}
 	}
 
 	private getBasemapTileUrl(): string {
@@ -381,7 +427,11 @@ export class TrackStubView extends TextFileView {
 
 	private renderTrackRoute(): void {
 		this.clearRouteLayer();
-		if (!this.basemap || this.file?.extension?.toLowerCase() !== "gpx") {
+		if (
+			!this.basemap ||
+			!this.file ||
+			getTrackFileExtension(this.file) !== "gpx"
+		) {
 			return;
 		}
 
@@ -442,5 +492,8 @@ export class TrackStubView extends TextFileView {
 		this.mapContainerEl = null;
 		this.mapWrapEl = null;
 		this.mapErrorEl = null;
+		this.layoutEl = null;
+		this.mapColumnEl = null;
+		this.statsPlaceholderEl = null;
 	}
 }

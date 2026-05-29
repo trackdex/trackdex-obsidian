@@ -11,6 +11,7 @@ export const en = {
 		openOverview: "Open overview",
 		insertMarker: "Insert marker",
 		scanTracksFolder: "Scan tracks folder",
+		openTracksSidebar: "Open track catalog",
 	},
 	settings: {
 		tracksFolderName: "Tracks folder",
@@ -22,6 +23,14 @@ export const en = {
 	},
 	common: {
 		notImplementedYet: "Not implemented yet",
+	},
+	views: {
+		tracksSidebarTitle: "Track catalog",
+		tracksSidebarEmpty: "Track catalog is coming soon. Run indexing in a later milestone.",
+		trackStatsPlaceholder:
+			"Stats panel (milestone 0.5). Indexed tracks: {count}.",
+		trackMobileTabsHint: "On mobile, map and stats will use tabs.",
+		trackPreviewComingSoon: "Map preview for this format is coming soon.",
 	},
 } as const;
 

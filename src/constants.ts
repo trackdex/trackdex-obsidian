@@ -1,6 +1,14 @@
 export const TRACKDEX_TRACK_VIEW_TYPE = "trackdex-track-view";
 
-export const TRACKDEX_GPX_EXTENSIONS = ["gpx"] as const;
+export const TRACKDEX_TRACKS_SIDEBAR_VIEW_TYPE = "trackdex-tracks-sidebar";
+
+/** Values for `Plugin.registerExtensions` (no leading dot). */
+export const TRACKDEX_TRACK_FILE_EXTENSIONS = [
+	"gpx",
+	"tcx",
+	"fit",
+	"fit.gz",
+] as const;
 
 /**
  * Raster tiles (Leaflet). Works in Obsidian; vector MapLibre/OpenFreeMap styles do not.

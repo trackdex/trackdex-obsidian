@@ -1,2 +1,4 @@
-export {registerTrackView} from "./register-track-view";
-export {TrackStubView} from "./track-stub-view";
+export {openTracksSidebar} from "./open-tracks-sidebar";
+export {getTrackFileExtension} from "./track-file-extension";
+export {TrackView} from "./track-view";
+export {TracksSidebarView} from "./tracks-sidebar-view";
