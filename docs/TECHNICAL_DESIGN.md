@@ -20,12 +20,77 @@ Out-of-scope items remain as defined in requirements.
 
 ## 2. Key decisions and gates
 
-1. **Storage implementation:** SQLite-compatible local storage is the preferred v1 direction, but the exact adapter/library is a Milestone 0.1 compatibility gate. The adapter must work in desktop and mobile Obsidian with `isDesktopOnly: false`, bundle with esbuild, persist locally in the plugin data area, and avoid APIs unavailable on mobile. If this cannot be proven early, v1 must explicitly choose another adapter or become desktop-only.
-2. **Storage access model:** business logic depends on repository interfaces only; the chosen storage engine is an adapter behind abstraction.
+1. **Storage implementation (closed 0.1-05):** **v1 storage adapter = sql.js** (SQLite in WebAssembly) with vault-backed file persistence. Evidence: [`docs/milestones/0.1/evidence/storage-spike.md`](milestones/0.1/evidence/storage-spike.md). See [§2.1](#21-v1-local-storage-decision-0105) for persistence path, fallback, sync, and mobile policy. Milestone **0.2** may proceed on this adapter; production wiring is **0.1-09** (bootstrap) then **0.2** (schema/migrations).
+2. **Storage access model:** business logic depends on repository interfaces only; sql.js and any fallback engine are infrastructure adapters behind repository ports — no direct sql.js imports outside `src/infrastructure/storage/**`.
 3. **Metrics source in UI v1:** only `computed` metrics are displayed.
 4. **Log rotation:** hardcoded `5 files x 1 MB`.
-5. **FIT/FIT.GZ parser:** target v1 support, but the parser library/implementation is a Milestone 0.1 feasibility gate for bundle size, mobile compatibility, and available runtime APIs.
+5. **FIT/FIT.GZ parser (closed 0.1-06):** **v1 in scope** — `.fit` and `.fit.gz` (case-insensitive). Primary library **`fit-file-parser`** (npm); `.fit.gz` via `DecompressionStream('gzip')` then FIT binary parse. Evidence: [`docs/milestones/0.1/evidence/fit-parser-spike.md`](milestones/0.1/evidence/fit-parser-spike.md). See [§2.5](#25-v1-fitfitgz-parser-decision-0106) for bundle impact, constraints, alternate rejected path, and production wiring (**0.4**). Milestone **0.4** may proceed on this parser path.
 6. **Technical design file location:** `docs/TECHNICAL_DESIGN.md`.
+
+### 2.1 v1 local storage (decision 0.1-05)
+
+| Item | Decision |
+|------|----------|
+| **v1 storage adapter** | **sql.js** (`SQL.Database`), SQLite-compatible logical schema from §6 |
+| **Persistence** | `{vault}/.obsidian/plugins/trackdex-obsidian/index.sqlite` via `app.vault.adapter.readBinary` / `writeBinary` (`db.export()` on save, load bytes on open) |
+| **WASM bundling** | Inlined WASM binary at build time (`trackdex:sql-wasm` esbuild plugin); `initSqlJs({ wasmBinary })` — no separate `.wasm` asset in the plugin folder (required for mobile packaging) |
+| **Not used for index** | `plugin.loadData()` / `saveData()` (JSON-only, unsuitable for large binary DB) |
+| **Fallback adapter** | **IndexedDB** object-store adapter — **only** if sql.js fails on a target platform during bootstrap or smoke checks; spike did not require it on desktop or Android |
+| **`manifest.json` `isDesktopOnly`** | **`false`** — unchanged; desktop and Android operator smoke passed CRUD + reload + verify ([storage spike evidence](milestones/0.1/evidence/storage-spike.md#operator-evidence)) |
+| **v1 scope (0.2+)** | Full logical schema (§6), migrations, repositories; same load/export persist model as spike until profiling says otherwise |
+
+**Sync implications (v1):** `index.sqlite` lives under the plugin data directory and may sync with the vault (Obsidian Sync, git, etc.). v1 does not auto-exclude the file from sync. Document size and sync conflict risk in README (0.2): concurrent writes to `index.sqlite` on two devices can corrupt SQLite; v1 policy is reindex on a new device / single-writer expectation (see `docs/CONCEPT.md`), not automatic merge.
+
+**Rejected for v1** (see spike): native `better-sqlite3` / Node `fs`, Capacitor SQLite, OPFS / SharedArrayBuffer–only stacks, in-memory-only sql.js without file persist.
+
+**Mobile API blocklist (storage adapters):** no Node `fs`/`path`/`child_process`, no paths outside `vault.adapter`, no OPFS/SAB as hard dependencies, no remote DB. Allowed: `vault.adapter` binary I/O, `indexedDB`, WebAssembly via sql.js.
+
+**Risks carried into 0.2:** full-database load/save in memory (~bundle add-on ~0.9 MB minified when sql.js is in `main.js`); monitor memory and save latency on Android at scale; track bundle size in 0.1-14 acceptance.
+
+**PoC / bootstrap map:** spike code under `src/infrastructure/storage/candidates/` (`ENABLE_STORAGE_SPIKE`, default `false`); production facade `storage-adapter.ts` + `migrations.ts` in **0.1-09**.
+
+### 2.5 v1 FIT/FIT.GZ parser (decision 0.1-06)
+
+| Item | Decision |
+|------|----------|
+| **v1 format scope** | **In scope** — `.fit` and `.fit.gz` remain Must formats (aligned with `docs/REQUIREMENTS.md` / `docs/PRODUCT_SPEC_V1.md`) |
+| **Primary parser library** | **`fit-file-parser`** (npm) — ES module; maps to `ParsedTrack` via infrastructure adapter |
+| **`.fit.gz` decompress** | `DecompressionStream('gzip')` on raw vault bytes, then parse FIT binary — no Node `zlib` / `fs` in plugin path ([`gunzip.ts`](../src/infrastructure/parsers/candidates/gunzip.ts) spike) |
+| **Production modules (0.4)** | `fit-parser.ts` + `fit-gz-parser.ts` (or shared decompress helper) behind `parser-router.ts`; domain/application use `TrackParserPort` only |
+| **Alternate (not v1 primary)** | **`@garmin-fit/sdk`** — larger bundle (~0.31 MB isolated vs ~0.13 MB); numeric sport enums need profile lookup; spike reference only — **remove in milestone 0.4** after production `fit-file-parser` wiring (fails on compressed-timestamp FIT; see `docs/IMPLEMENTATION_PLAN.md` §0.4) |
+| **`manifest.json` `isDesktopOnly`** | **`false`** — unchanged; parser path must not rely on desktop-only APIs |
+| **Gate status** | **Go with constraints** — Node fixture parse PASS for both candidates; Obsidian desktop/mobile manual smoke **not run** at spike time (see constraints below) |
+
+**Bundle impact (measured 2026-05-29, spike evidence):**
+
+| Artifact | Size |
+|----------|------|
+| Production `main.js` (FIT spike off) | ~1.49 MB |
+| `fit-file-parser` (isolated minified) | ~0.13 MB |
+| Rough estimate with FIT parser in `main.js` | ~1.62 MB (main + fit-file-parser) |
+
+**Spike validation (automated):** `tests/fixtures/sample-activity.fit` and `sample-activity.fit.gz` → `ParsedTrack` (3228 GPS points, laps, bbox, sport, timestamps); cold parse ~29 ms (fit-file-parser, Node 22, ~95 KB FIT). No `TrackParserPort` contract change required (**0.1-02**).
+
+**Constraints carried into 0.4 / release:**
+
+- Run Obsidian manual smoke on desktop and Android (commands `fit-spike-smoke` / `fit-spike-garmin-sdk` with `ENABLE_FIT_PARSER_SPIKE`) before treating mobile parse time/memory as baselined.
+- Re-check bundle size when wiring production parser (`npm run measure-bundle`).
+- HR may be absent on some FIT files (fixture had power/cadence only); UI must tolerate missing optional fields per data flags.
+
+**Rejected / deferred (spike):**
+
+| Option | Reason |
+|--------|--------|
+| **Exclude FIT/FIT.GZ from v1** | Not chosen — automated feasibility PASS; Must formats unchanged |
+| **Desktop-only native parser** | Violates mobile parity |
+| **`@garmin-fit/sdk` as primary** | ~2.4× larger isolated bundle; fit-file-parser sufficient for `ParsedTrack` mapping |
+| **Node `zlib` for `.fit.gz`** | Unavailable / undesirable in mobile Obsidian plugin path |
+
+**Mobile API blocklist (parser adapters):** no Node `fs`/`zlib`/`child_process`, no dynamic native deps, no paths outside vault adapter for file bytes. Allowed: `ArrayBuffer` / `Uint8Array` from vault, `DecompressionStream`, bundled JS parser.
+
+**Risks carried into 0.4:** manual mobile smoke gap; large user FIT files on Android (memory, parse latency); `DecompressionStream` availability on oldest mobile WebViews (fail gracefully with parse error).
+
+**PoC / production map:** spike under `src/infrastructure/parsers/candidates/` (`ENABLE_FIT_PARSER_SPIKE`, default `false`); production `fit-parser.ts`, `fit-gz-parser.ts`, `parser-router.ts` in **0.4** (not **0.1**).
 
 ## 3. Architecture overview
 
@@ -149,13 +214,9 @@ Application and domain logic must depend on interfaces:
 - `PerfMetricsPort`
   - write measurement events/counters/timers.
 
-Concrete storage repositories are adapter implementations of these ports. SQLite-compatible storage is the preferred candidate; IndexedDB or another local browser-safe engine is a fallback only if SQLite cannot be made reliable on mobile Obsidian. The final v1 choice must be recorded before Milestone 0.2 starts.
+Concrete storage repositories are adapter implementations of these ports backed by **sql.js** (§2.1). **IndexedDB** remains a documented fallback adapter only if sql.js cannot be initialized on a platform; it is not the primary v1 path.
 
-FIT/FIT.GZ support must also be validated before full parser implementation starts. The selected parser must:
-- bundle with esbuild without dynamic native/Node-only dependencies,
-- run in desktop and mobile Obsidian,
-- parse representative FIT/FIT.GZ fixtures into the unified intermediate model,
-- keep bundle size within the release-readiness threshold set during the spike.
+FIT/FIT.GZ parsers are infrastructure implementations of `TrackParserPort` backed by **`fit-file-parser`** (§2.5). `.fit.gz` adapters decompress with **`DecompressionStream('gzip')`** before parse. Parser libraries are bundled via esbuild (no dynamic native/Node-only deps). Production wiring and fixture matrix expansion are milestone **0.4**; feasibility gate is **closed (0.1-06)** with residual manual mobile smoke noted in §2.5.
 
 ## 6. Data model (logical schema v1)
 
@@ -420,7 +481,7 @@ Targets:
    - desktop steady-state indexing process overhead **<= 300 MB** plugin-related peak,
    - mobile target **<= 180 MB** plugin-related peak.
 
-These are engineering thresholds, not strict user-visible SLA. Desktop targets are v1 release gates; mobile targets are aspirational until the storage and parser feasibility gates produce baseline data.
+These are engineering thresholds, not strict user-visible SLA. Desktop targets are v1 release gates. Mobile targets remain aspirational until FIT parser manual mobile baseline exists (§2.5 — automated Node baseline only as of **0.1-06**); **storage** mobile feasibility is confirmed (sql.js + `index.sqlite` on desktop and Android, 0.1-03 spike).
 
 ## 14.2 How actual values are measured
 
@@ -469,7 +530,7 @@ Recommended artifacts:
 ## 16. Delivery plan (phased)
 
 1. Foundation:
-   - interfaces, DI container, storage compatibility spike, FIT parser feasibility spike, chosen adapter skeleton, migrations.
+   - interfaces, DI container, storage decision recorded (0.1-05), storage adapter bootstrap + migrations skeleton (0.1-09), FIT parser feasibility spike, FIT decision (0.1-06), parser implementation in later milestones.
 2. Indexing core:
    - scanner, queue, statuses, first-scan flow.
 3. Parsers + computed metrics:

@@ -1,86 +1,43 @@
-import {App, Editor, MarkdownView, Modal, Notice, Plugin} from 'obsidian';
-import {migrateSettings, TrackdexSettings, TrackdexSettingTab} from "./settings";
-import {preserveSettingsFocus} from "./utils/preserve-settings-focus";
-import {registerTrackView} from "./views/register-track-view";
+import {Plugin} from "obsidian";
+import {
+	bootstrapTrackdexPlugin,
+	createTrackdexContainer,
+	type TrackdexContainer,
+	type TrackdexPluginHost,
+} from "./composition";
+import {preserveSettingsFocus} from "./ui/components/preserve-settings-focus";
+import {
+	migrateSettings,
+	type TrackdexSettings,
+} from "./ui/settings/settings-tab";
 
-export default class TrackdexPlugin extends Plugin {
-	settings: TrackdexSettings;
+export default class TrackdexPlugin extends Plugin implements TrackdexPluginHost {
+	settings!: TrackdexSettings;
+	private container: TrackdexContainer | null = null;
 
-	async onload() {
+	async onload(): Promise<void> {
 		await this.loadSettings();
-
-		registerTrackView(this);
-
-		this.addRibbonIcon("map", "Trackdex", () => {
-			new Notice("Trackdex: open track catalog (coming soon)");
-		});
-
-		const statusBarItemEl = this.addStatusBarItem();
-		statusBarItemEl.setText("Trackdex: ready");
-
-		this.addCommand({
-			id: "open-trackdex-overview",
-			name: "Open overview",
-			callback: () => {
-				new TrackdexModal(this.app).open();
-			}
-		});
-
-		this.addCommand({
-			id: "insert-trackdex-tag",
-			name: "Insert marker",
-			editorCallback: (editor: Editor, _view: MarkdownView) => {
-				editor.replaceSelection("#trackdex");
-			}
-		});
-
-		this.addCommand({
-			id: "scan-tracks-folder",
-			name: "Scan tracks folder",
-			checkCallback: (checking: boolean) => {
-				const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
-				if (markdownView) {
-					if (!checking) {
-						new Notice(`Trackdex scan is not implemented yet. Folder: ${this.settings.tracksFolder}`);
-					}
-
-					return true;
-				}
-				return false;
-			}
-		});
-
-		this.addSettingTab(new TrackdexSettingTab(this.app, this));
+		this.container = await createTrackdexContainer(this);
+		await bootstrapTrackdexPlugin(this, this.container);
 	}
 
 	onunload(): void {
 		preserveSettingsFocus(this.app);
+		this.container?.dispose();
+		this.container = null;
 		super.onunload();
 	}
 
-	async loadSettings() {
-		this.settings = migrateSettings(
-			await this.loadData() as Partial<TrackdexSettings> | null,
-		);
+	async loadSettings(): Promise<void> {
+		const raw = (await this.loadData()) as Record<string, unknown> | null;
+		const {settings, strippedLegacy} = migrateSettings(raw);
+		this.settings = settings;
+		if (strippedLegacy) {
+			await this.saveSettings();
+		}
 	}
 
-	async saveSettings() {
+	async saveSettings(): Promise<void> {
 		await this.saveData(this.settings);
-	}
-}
-
-class TrackdexModal extends Modal {
-	constructor(app: App) {
-		super(app);
-	}
-
-	onOpen() {
-		let {contentEl} = this;
-		contentEl.setText("Trackdex helps you catalog GPX tracks in your vault.");
-	}
-
-	onClose() {
-		const {contentEl} = this;
-		contentEl.empty();
 	}
 }
