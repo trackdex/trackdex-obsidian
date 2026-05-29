@@ -188,7 +188,7 @@ function parseTrkptElement(el: Element): ParsedTrackPoint | null {
 		timestampRaw: readChildText(el, "time"),
 		hrBpm: readExtensionNumber(el, ["hr", "heartrate"]),
 		powerW: readExtensionNumber(el, ["power", "watts"]),
-		cadenceRpm: readExtensionNumber(el, ["cadence"]),
+		cadenceRpm: readExtensionNumber(el, ["cad", "cadence"]),
 		speedMps: readExtensionNumber(el, ["speed", "velocity"]),
 	};
 }

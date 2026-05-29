@@ -70,16 +70,22 @@ function parseExplicitOffsetMin(raw: string): number | null {
 	return sign * (hours * 60 + minutes + Math.trunc(seconds / 60));
 }
 
-function parseExplicitToUtcMs(raw: string): number | null {
-	const parsed = Date.parse(raw.trim());
-	if (Number.isNaN(parsed)) {
-		return null;
-	}
-	return parsed;
+const EXPLICIT_ISO_WITHOUT_TZ =
+	/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?(?:Z|[+-]\d{2}(?::?\d{2})?(?::?\d{2})?)$/i;
+
+interface CalendarComponents {
+	readonly year: number;
+	readonly month: number;
+	readonly day: number;
+	readonly hour: number;
+	readonly minute: number;
+	readonly second: number;
+	readonly fractionMs: number;
 }
 
-function parseNaiveLocalToUtcMs(raw: string, indexingOffsetMin: number): number | null {
-	const match = raw.trim().match(NAIVE_ISO_PATTERN);
+function parseCalendarComponents(raw: string): CalendarComponents | null {
+	const match =
+		raw.trim().match(EXPLICIT_ISO_WITHOUT_TZ) ?? raw.trim().match(NAIVE_ISO_PATTERN);
 	if (!match) {
 		return null;
 	}
@@ -105,6 +111,44 @@ function parseNaiveLocalToUtcMs(raw: string, indexingOffsetMin: number): number 
 		return null;
 	}
 
+	return { year, month, day, hour, minute, second, fractionMs };
+}
+
+/** Reject JS Date rollover (e.g. 2024-02-31 → March 2). */
+function calendarComponentsAreReal(components: CalendarComponents): boolean {
+	const { year, month, day, hour, minute, second, fractionMs } = components;
+	const utcMs = Date.UTC(year, month - 1, day, hour, minute, second, fractionMs);
+	const normalized = new Date(utcMs);
+	return (
+		normalized.getUTCFullYear() === year &&
+		normalized.getUTCMonth() + 1 === month &&
+		normalized.getUTCDate() === day &&
+		normalized.getUTCHours() === hour &&
+		normalized.getUTCMinutes() === minute &&
+		normalized.getUTCSeconds() === second &&
+		normalized.getUTCMilliseconds() === fractionMs
+	);
+}
+
+function parseExplicitToUtcMs(raw: string): number | null {
+	const components = parseCalendarComponents(raw);
+	if (components === null || !calendarComponentsAreReal(components)) {
+		return null;
+	}
+	const parsed = Date.parse(raw.trim());
+	if (Number.isNaN(parsed)) {
+		return null;
+	}
+	return parsed;
+}
+
+function parseNaiveLocalToUtcMs(raw: string, indexingOffsetMin: number): number | null {
+	const components = parseCalendarComponents(raw);
+	if (components === null || !calendarComponentsAreReal(components)) {
+		return null;
+	}
+
+	const { year, month, day, hour, minute, second, fractionMs } = components;
 	const localAsUtcMs = Date.UTC(
 		year,
 		month - 1,

@@ -145,3 +145,32 @@ test("default parser router: GPX routes to real adapter", async () => {
 	assert.equal(result.value.titleFromFile, "Morning ride");
 	assert.equal(result.value.points.length, 3);
 });
+
+test("createGpxParserPort: reads Garmin gpxtpx:cad as cadenceRpm", async () => {
+	const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<gpx xmlns="http://www.topografix.com/GPX/1/1"
+  xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v1">
+  <trk>
+    <trkseg>
+      <trkpt lat="53.2" lon="50.11">
+        <time>2024-06-01T08:00:00Z</time>
+        <extensions>
+          <gpxtpx:TrackPointExtension>
+            <gpxtpx:cad>88</gpxtpx:cad>
+          </gpxtpx:TrackPointExtension>
+        </extensions>
+      </trkpt>
+    </trkseg>
+  </trk>
+</gpx>`;
+	const parser = createGpxParserPort();
+	const result = await parser.parse(
+		baseInput("gpx", new TextEncoder().encode(xml)),
+	);
+
+	assert.equal(result.ok, true);
+	if (!result.ok) {
+		return;
+	}
+	assert.equal(result.value.points[0]?.cadenceRpm, 88);
+});

@@ -65,8 +65,7 @@ export function mapFitFileParserToParsedTrack(parsed: {
 		name: typeof lap["wkt_step_name"] === "string" ? lap["wkt_step_name"] : null,
 		startedAtRaw: toIsoString(lap["start_time"]),
 		endedAtRaw: toIsoString(lap["timestamp"]),
-		pointCount:
-			typeof lap["total_cycles"] === "number" ? lap["total_cycles"] : null,
+		pointCount: null,
 		bbox: null,
 	}));
 

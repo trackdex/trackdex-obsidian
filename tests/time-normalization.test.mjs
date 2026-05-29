@@ -93,6 +93,27 @@ test("normalizeTimestamp: invalid naive components -> unknown", () => {
 	assert.equal(result.utcIso, null);
 });
 
+test("normalizeTimestamp: nonexistent calendar day explicit UTC -> unknown", () => {
+	const result = normalizeTimestamp("2024-02-31T08:00:00Z", UTC_PLUS_3);
+	assert.equal(result.raw, "2024-02-31T08:00:00Z");
+	assert.equal(result.utcIso, null);
+	assert.equal(result.timezoneSource, "unknown");
+});
+
+test("normalizeTimestamp: nonexistent calendar day explicit offset -> unknown", () => {
+	const result = normalizeTimestamp("2024-02-31T08:00:00+02:00", UTC_PLUS_3);
+	assert.equal(result.raw, "2024-02-31T08:00:00+02:00");
+	assert.equal(result.utcIso, null);
+	assert.equal(result.timezoneSource, "unknown");
+});
+
+test("normalizeTimestamp: nonexistent calendar day naive local -> unknown", () => {
+	const result = normalizeTimestamp("2024-02-31T08:00:00", UTC_PLUS_3);
+	assert.equal(result.raw, "2024-02-31T08:00:00");
+	assert.equal(result.utcIso, null);
+	assert.equal(result.timezoneSource, "unknown");
+});
+
 test("normalizeTrackTimes: uses track fields and falls back to points", () => {
 	const result = normalizeTrackTimes(
 		{

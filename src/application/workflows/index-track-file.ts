@@ -55,6 +55,13 @@ async function markIndexing(
 	return true;
 }
 
+function unexpectedIndexError(error: unknown): DomainError {
+	if (error instanceof Error) {
+		return domainError("parse_failed", error.message, error);
+	}
+	return domainError("parse_failed", String(error), error);
+}
+
 async function markIndexError(
 	tracks: TrackRepository,
 	path: TrackPath,
@@ -93,48 +100,56 @@ export async function indexTrackFile(
 		return;
 	}
 
-	const file = await deps.vaultTrackFile.read(path);
-	if (file === null) {
-		await markIndexError(
-			deps.tracks,
-			path,
-			domainError("not_found", `Track file not found in vault: ${path}`),
-		);
-		return;
-	}
+	try {
+		const file = await deps.vaultTrackFile.read(path);
+		if (file === null) {
+			await markIndexError(
+				deps.tracks,
+				path,
+				domainError("not_found", `Track file not found in vault: ${path}`),
+			);
+			return;
+		}
 
-	const parsed = await deps.trackParser.parse({
-		vaultRelativePath: path,
-		extension: file.extension,
-		content: file.content,
-	});
-
-	if (!parsed.ok) {
-		await markIndexError(deps.tracks, path, parsed.error);
-		return;
-	}
-
-	const aggregated = aggregateParsedTrackForCatalog(
-		parsed.value,
-		createTimeNormalizationContext(deps.clock),
-	);
-
-	const indexed = buildIndexedTrackRecord({
-		path,
-		mtimeMs: file.mtimeMs,
-		sha256: existing.sha256,
-		aggregated,
-	});
-
-	const succeeded = transitionFileStatus("indexing", "index_succeeded");
-	if (!succeeded.ok) {
-		log?.warn("index track: unexpected status after parse", {
-			path,
-			reason: succeeded.error.message,
+		const parsed = await deps.trackParser.parse({
+			vaultRelativePath: path,
+			extension: file.extension,
+			content: file.content,
 		});
-	}
 
-	await deps.tracks.upsert(indexed);
+		if (!parsed.ok) {
+			await markIndexError(deps.tracks, path, parsed.error);
+			return;
+		}
+
+		const aggregated = aggregateParsedTrackForCatalog(
+			parsed.value,
+			createTimeNormalizationContext(deps.clock),
+		);
+
+		const indexed = buildIndexedTrackRecord({
+			path,
+			mtimeMs: file.mtimeMs,
+			sha256: existing.sha256,
+			aggregated,
+		});
+
+		const succeeded = transitionFileStatus("indexing", "index_succeeded");
+		if (!succeeded.ok) {
+			log?.warn("index track: unexpected status after parse", {
+				path,
+				reason: succeeded.error.message,
+			});
+		}
+
+		await deps.tracks.upsert(indexed);
+	} catch (error: unknown) {
+		log?.warn("index track failed with unexpected error", {
+			path,
+			error: error instanceof Error ? error.message : String(error),
+		});
+		await markIndexError(deps.tracks, path, unexpectedIndexError(error));
+	}
 }
 
 /** Factory for full/incremental scan job enqueue (0.4-11). */

@@ -169,3 +169,61 @@ test("index track file: missing vault file → error status", async () => {
 	assert.match(row.errorMessage, /not found/i);
 	assert.match(row.errorDetails, /code=not_found/);
 });
+
+test("index track file: vault read throws → error status, not stuck indexing", async () => {
+	const tracks = createMemoryTrackRepo();
+	const path = "tracks/boom.gpx";
+	await tracks.insertDiscovered({ path, mtimeMs: 100 });
+
+	await indexTrackFile(
+		{
+			tracks,
+			trackParser: createDefaultParserRouter(),
+			vaultTrackFile: {
+				read: async () => {
+					throw new Error("vault read failed");
+				},
+			},
+			clock,
+		},
+		path,
+	);
+
+	const row = await tracks.findByPath(path);
+	assert.ok(row);
+	assert.equal(row.status, "error");
+	assert.match(row.errorMessage, /vault read failed/i);
+	assert.match(row.errorDetails, /code=parse_failed/);
+});
+
+test("index track file: parser throws → error status, not stuck indexing", async () => {
+	const tracks = createMemoryTrackRepo();
+	const path = TRACK_PATH;
+	await tracks.insertDiscovered({ path, mtimeMs: 100 });
+
+	await indexTrackFile(
+		{
+			tracks,
+			trackParser: {
+				parse: async () => {
+					throw new Error("parser exploded");
+				},
+			},
+			vaultTrackFile: createFixtureVault({
+				[TRACK_PATH]: {
+					content: fixtureBytes("sample-track.gpx"),
+					extension: "gpx",
+					mtimeMs: 200,
+				},
+			}),
+			clock,
+		},
+		path,
+	);
+
+	const row = await tracks.findByPath(path);
+	assert.ok(row);
+	assert.equal(row.status, "error");
+	assert.match(row.errorMessage, /parser exploded/i);
+	assert.match(row.errorDetails, /code=parse_failed/);
+});

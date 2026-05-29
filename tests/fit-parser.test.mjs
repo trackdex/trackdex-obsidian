@@ -76,3 +76,18 @@ test("fit parser: default router routes .fit to production adapter", async () =>
 	assert.equal(result.ok, true);
 	assert.equal(result.value.points.length, 3228);
 });
+
+test("fit parser: lap segments do not use total_cycles as pointCount", async () => {
+	const parser = createFitParserPort();
+	const result = await parser.parse(parseInput(fitFixtureBytes()));
+
+	assert.equal(result.ok, true);
+	if (!result.ok) {
+		return;
+	}
+
+	assert.ok(result.value.segments.length > 0);
+	for (const segment of result.value.segments) {
+		assert.equal(segment.pointCount, null);
+	}
+});
