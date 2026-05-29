@@ -1,4 +1,6 @@
 import {registerTrackdexCommands} from "../infrastructure/obsidian/commands-registry";
+import {ENABLE_FIT_PARSER_SPIKE} from "../infrastructure/parsers/candidates/spike-config";
+import {ENABLE_STORAGE_SPIKE} from "../infrastructure/storage/candidates/spike-config";
 import {t} from "../ui/i18n";
 import {TrackdexSettingTab} from "../ui/settings/settings-tab";
 import {openTracksSidebar} from "../ui/views/open-tracks-sidebar";
@@ -31,13 +33,12 @@ export async function bootstrapTrackdexPlugin(
 
 	plugin.addSettingTab(new TrackdexSettingTab(plugin.app, plugin));
 
-	await registerOptionalSpikeCommands(plugin);
+	if (ENABLE_STORAGE_SPIKE || ENABLE_FIT_PARSER_SPIKE) {
+		await registerOptionalSpikeCommands(plugin);
+	}
 }
 
 async function registerOptionalSpikeCommands(plugin: TrackdexPluginHost): Promise<void> {
-	const {ENABLE_STORAGE_SPIKE} = await import(
-		"../infrastructure/storage/candidates/spike-config"
-	);
 	if (ENABLE_STORAGE_SPIKE) {
 		const {registerStorageSpikeCommand} = await import(
 			"../infrastructure/storage/candidates/register-storage-spike-command"
@@ -45,9 +46,6 @@ async function registerOptionalSpikeCommands(plugin: TrackdexPluginHost): Promis
 		registerStorageSpikeCommand(plugin);
 	}
 
-	const {ENABLE_FIT_PARSER_SPIKE} = await import(
-		"../infrastructure/parsers/candidates/spike-config"
-	);
 	if (ENABLE_FIT_PARSER_SPIKE) {
 		const {registerFitParserSpikeCommand} = await import(
 			"../infrastructure/parsers/candidates/register-fit-parser-spike-command"

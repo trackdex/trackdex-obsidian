@@ -6,8 +6,10 @@
 	"type": "module",
 	"scripts": {
 		"dev": "node scripts/build.mjs",
-		"build": "tsc -noEmit -skipLibCheck && node scripts/build.mjs production && node --test tests/bundle-integrity.test.mjs",
-		"test": "node --test",
+		"build": "tsc -noEmit -skipLibCheck && node scripts/build.mjs production && npm run test:bundle",
+		"test": "npm run test:unit",
+		"test:unit": "node --test ./tests/*.test.mjs",
+		"test:bundle": "node --test ./tests/bundle/*.test.mjs",
 		"measure-bundle": "node scripts/measure-bundle.mjs",
 		"deploy": "node scripts/deploy.mjs",
 		"deploy:dev": "node scripts/deploy.mjs dev",

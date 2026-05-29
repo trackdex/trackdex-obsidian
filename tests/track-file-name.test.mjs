@@ -1,10 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import jiti from "jiti";
 
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const importTs = jiti(import.meta.url);
 const { isFitTrackFileName, matchTrackFileExtensionFromName } = importTs(
 	"../src/domain/track/track-file-name.ts",

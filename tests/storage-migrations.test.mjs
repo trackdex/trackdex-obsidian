@@ -4,70 +4,68 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import initSqlJs from "sql.js";
+import jiti from "jiti";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const WASM_PATH = join(ROOT, "node_modules/sql.js/dist/sql-wasm.wasm");
 
-const SCHEMA_VERSION_TABLE = "schema_version";
-const INDEX_META_TABLE = "index_meta";
-
-function applyMigrationV0(db) {
-	db.run(`
-		CREATE TABLE IF NOT EXISTS ${SCHEMA_VERSION_TABLE} (
-			version INTEGER NOT NULL
-		);
-	`);
-	const versionRows = db.exec(`SELECT version FROM ${SCHEMA_VERSION_TABLE} LIMIT 1`);
-	if (!versionRows[0]?.values.length) {
-		db.run(`INSERT INTO ${SCHEMA_VERSION_TABLE} (version) VALUES (0)`);
-	}
-
-	db.run(`
-		CREATE TABLE IF NOT EXISTS ${INDEX_META_TABLE} (
-			id INTEGER PRIMARY KEY CHECK (id = 1),
-			schema_version INTEGER NOT NULL DEFAULT 0,
-			first_scan_approved INTEGER NOT NULL DEFAULT 0,
-			scan_paused INTEGER NOT NULL DEFAULT 0,
-			last_full_scan_at_utc TEXT,
-			last_run_interrupted INTEGER NOT NULL DEFAULT 0
-		);
-	`);
-	const metaRows = db.exec(`SELECT id FROM ${INDEX_META_TABLE} WHERE id = 1`);
-	if (!metaRows[0]?.values.length) {
-		db.run(
-			`INSERT INTO ${INDEX_META_TABLE} (
-				id, schema_version, first_scan_approved, scan_paused, last_run_interrupted
-			) VALUES (1, 0, 0, 0, 0)`,
-		);
-	}
-}
+const importTs = jiti(import.meta.url);
+const {
+	runMigrations,
+	SCHEMA_VERSION_TABLE,
+	INDEX_META_TABLE,
+} = importTs("../src/infrastructure/storage/migrations.ts");
+const { createNoopLoggerPort } = importTs(
+	"../src/infrastructure/logging/noop-logger-port.ts",
+);
 
 async function openDatabase(bytes = null) {
 	const wasmBinary = new Uint8Array(readFileSync(WASM_PATH));
 	const SQL = await initSqlJs({ wasmBinary });
-	return bytes ? new SQL.Database(bytes) : new SQL.Database();
+	const db = bytes ? new SQL.Database(bytes) : new SQL.Database();
+	return { SQL, db };
 }
 
 test("storage migrations: v0 bootstrap is idempotent", async () => {
-	const db = await openDatabase();
-	applyMigrationV0(db);
-	applyMigrationV0(db);
+	const { db } = await openDatabase();
+	const logger = createNoopLoggerPort();
+	runMigrations(db, logger);
+	runMigrations(db, logger);
 	const version = db.exec(`SELECT version FROM ${SCHEMA_VERSION_TABLE}`);
 	assert.equal(Number(version[0].values[0][0]), 0);
-	const meta = db.exec(`SELECT schema_version FROM ${INDEX_META_TABLE} WHERE id = 1`);
+	const meta = db.exec(
+		`SELECT schema_version FROM ${INDEX_META_TABLE} WHERE id = 1`,
+	);
 	assert.equal(Number(meta[0].values[0][0]), 0);
 	db.close();
 });
 
 test("storage migrations: export/import preserves schema tables", async () => {
-	const db = await openDatabase();
-	applyMigrationV0(db);
+	const { db } = await openDatabase();
+	const logger = createNoopLoggerPort();
+	runMigrations(db, logger);
 	const exported = db.export();
 	db.close();
 
-	const db2 = await openDatabase(exported);
-	applyMigrationV0(db2);
+	const { db: db2 } = await openDatabase(exported);
+	runMigrations(db2, logger);
 	const version = db2.exec(`SELECT version FROM ${SCHEMA_VERSION_TABLE}`);
 	assert.equal(Number(version[0].values[0][0]), 0);
 	db2.close();
+});
+
+test("storage migrations: rejects newer schema than supported", async () => {
+	const { db } = await openDatabase();
+	db.run(`
+		CREATE TABLE ${SCHEMA_VERSION_TABLE} (
+			version INTEGER NOT NULL
+		);
+	`);
+	db.run(`INSERT INTO ${SCHEMA_VERSION_TABLE} (version) VALUES (99)`);
+	const logger = createNoopLoggerPort();
+	assert.throws(
+		() => runMigrations(db, logger),
+		/newer than supported/,
+	);
+	db.close();
 });

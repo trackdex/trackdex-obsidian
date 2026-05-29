@@ -4,7 +4,7 @@ import { existsSync, readFileSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const MAIN_JS = join(ROOT, "main.js");
 const STYLES_CSS = join(ROOT, "styles.css");
 
@@ -117,6 +117,38 @@ test("bundle integrity: no unresolved domain/application requires", () => {
 		[],
 		stray.length
 			? `Unexpected require() targets in main.js:\n${stray.join("\n")}`
+			: undefined,
+	);
+});
+
+const FORBIDDEN_SPIKE_COMMAND_IDS = [
+	"storage-spike-smoke",
+	"storage-spike-verify",
+	"storage-spike-indexeddb",
+	"fit-spike-smoke",
+	"fit-spike-garmin-sdk",
+];
+
+const FORBIDDEN_SPIKE_REQUIRES = [
+	"fit-file-parser",
+	"@garmin-fit/sdk",
+	"@garmin/fit/sdk",
+];
+
+test("bundle integrity: production main.js excludes spike commands and parser deps", () => {
+	const mainJs = readFileSync(MAIN_JS, "utf8");
+	const commandIds = FORBIDDEN_SPIKE_COMMAND_IDS.filter((id) =>
+		mainJs.includes(id),
+	);
+	const parserRequires = FORBIDDEN_SPIKE_REQUIRES.filter((pkg) =>
+		mainJs.includes(`require("${pkg}")`),
+	);
+	const found = [...commandIds, ...parserRequires];
+	assert.deepEqual(
+		found,
+		[],
+		found.length
+			? `Production main.js must not include spike artifacts (set spike flags to false and rebuild):\n${found.join("\n")}`
 			: undefined,
 	);
 });
