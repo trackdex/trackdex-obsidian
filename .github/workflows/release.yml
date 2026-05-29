@@ -1,0 +1,127 @@
+name: Release
+
+on:
+  push:
+    tags:
+      # Obsidian plugin tags match manifest version (1.0.0), not v1.0.0
+      - '[0-9]+.[0-9]+.[0-9]+'
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+  discussions: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.x"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build plugin
+        run: npm run build
+
+      - name: Attest release artifacts
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            main.js
+            styles.css
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            main.js
+            manifest.json
+            styles.css
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create release discussion
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          OWNER="${GITHUB_REPOSITORY%/*}"
+          REPO="${GITHUB_REPOSITORY#*/}"
+          TITLE="Release ${VERSION}"
+          RELEASE_URL="https://github.com/${GITHUB_REPOSITORY}/releases/tag/${VERSION}"
+
+          SEARCH_JSON="$(gh api graphql -f query='
+            query($search: String!) {
+              search(query: $search, type: DISCUSSION, first: 5) {
+                nodes {
+                  ... on Discussion { url title }
+                }
+              }
+            }
+          ' -f search="repo:${GITHUB_REPOSITORY} ${TITLE} in:title")"
+          EXISTING_URL="$(echo "${SEARCH_JSON}" | jq -r --arg title "${TITLE}" \
+            '[.data.search.nodes[]? | select(.title == $title) | .url][0] // empty')"
+
+          if [ -n "${EXISTING_URL}" ]; then
+            echo "Discussion already exists: ${EXISTING_URL}"
+            exit 0
+          fi
+
+          RELEASE_BODY="$(gh release view "${VERSION}" --repo "${GITHUB_REPOSITORY}" --json body -q .body 2>/dev/null || true)"
+          if [ -z "${RELEASE_BODY}" ]; then
+            RELEASE_BODY="See the release page for details."
+          fi
+
+          {
+            printf '%s\n\n' "${RELEASE_BODY}"
+            printf '---\n\n'
+            printf '📦 [Download release %s](%s)\n' "${VERSION}" "${RELEASE_URL}"
+          } > /tmp/discussion-body.md
+
+          REPO_DATA="$(gh api graphql -f query='
+            query($owner: String!, $name: String!) {
+              repository(owner: $owner, name: $name) {
+                id
+                discussionCategories(first: 20) {
+                  nodes { id name }
+                }
+              }
+            }
+          ' -f owner="${OWNER}" -f name="${REPO}")"
+
+          REPO_ID="$(echo "${REPO_DATA}" | jq -r '.data.repository.id')"
+          CATEGORY_ID="$(echo "${REPO_DATA}" | jq -r '
+            .data.repository.discussionCategories.nodes
+            | (map(select(.name == "Announcements"))[0].id)
+              // map(select(.name == "General"))[0].id)
+          ')"
+
+          if [ -z "${CATEGORY_ID}" ] || [ "${CATEGORY_ID}" = "null" ]; then
+            echo "No suitable discussion category found (expected Announcements or General)."
+            exit 1
+          fi
+
+          DISCUSSION_URL="$(gh api graphql -f query='
+            mutation($repositoryId: ID!, $categoryId: ID!, $title: String!, $body: String!) {
+              createDiscussion(
+                input: {repositoryId: $repositoryId, categoryId: $categoryId, title: $title, body: $body}
+              ) {
+                discussion { url }
+              }
+            }
+          ' -f repositoryId="${REPO_ID}" \
+            -f categoryId="${CATEGORY_ID}" \
+            -f title="${TITLE}" \
+            -F body=@/tmp/discussion-body.md \
+            --jq '.data.createDiscussion.discussion.url')"
+
+          echo "Created discussion: ${DISCUSSION_URL}"
