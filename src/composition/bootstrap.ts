@@ -1,4 +1,3 @@
-import {createStubVaultTrackEventHandler} from "../application/indexing/vault-track-event-handler-stub";
 import {registerTrackdexCommands} from "../infrastructure/obsidian/commands-registry";
 import {registerVaultIndexEvents} from "../infrastructure/obsidian/vault-index-events";
 import {ENABLE_FIT_PARSER_SPIKE} from "../infrastructure/parsers/candidates/spike-config";
@@ -28,7 +27,7 @@ export async function bootstrapTrackdexPlugin(
 		isScanPaused: async () => (await container.indexMeta.get()).scanPaused,
 		isFirstScanApproved: async () =>
 			(await container.indexMeta.get()).firstScanApproved,
-		handler: createStubVaultTrackEventHandler(container.logger),
+		handler: container.vaultTrackHandler,
 		logger: container.logger,
 	});
 

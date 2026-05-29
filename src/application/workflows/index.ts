@@ -11,3 +11,8 @@ export {
 	type IndexTrackFileJob,
 	type RunFullScanDeps,
 } from "./full-scan";
+export {
+	createIncrementalVaultTrackEventHandler,
+	handleVaultTrackEvent,
+	type RunIncrementalIndexDeps,
+} from "./incremental-index";

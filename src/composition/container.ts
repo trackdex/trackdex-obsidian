@@ -11,10 +11,12 @@ import type {
 } from "application/ports/repositories";
 import { Platform } from "obsidian";
 import { resetIndex as runResetIndex } from "application/workflows/reset-index";
+import type { VaultTrackEventHandlerPort } from "application/ports/vault-track-event-handler-port";
 import {
 	createFullScanWorkQueue,
 	runFullScan,
 } from "application/workflows/full-scan";
+import { createIncrementalVaultTrackEventHandler } from "application/workflows/incremental-index";
 import { createRotatingFileLoggerHandle } from "../infrastructure/logging";
 import { createNoopMetricsPort } from "../infrastructure/logging/noop-metrics-port";
 import { createSystemClockPort } from "../infrastructure/logging/system-clock-port";
@@ -59,6 +61,7 @@ export interface TrackdexContainer {
 	readonly placeReindex: PlaceReindexService;
 	readonly linkIndex: LinkIndexService;
 	readonly trackQuery: TrackQueryService;
+	readonly vaultTrackHandler: VaultTrackEventHandlerPort;
 	resetIndex(): Promise<void>;
 	/** Persists interrupted marker when a scan is active, then releases resources. */
 	shutdown(): Promise<void>;
@@ -137,6 +140,13 @@ export async function createTrackdexContainer(
 	const linkIndex = createLinkIndexService({ logger, noteLinks });
 	const trackQuery = createTrackQueryService(tracks);
 
+	const vaultTrackHandler = createIncrementalVaultTrackEventHandler({
+		tracks,
+		queue: fullScanQueue,
+		isScanPaused: async () => (await indexMeta.get()).scanPaused,
+		logger,
+	});
+
 	const resetIndex = async (): Promise<void> => {
 		if (!indexReset) {
 			throw new Error("Trackdex: index reset unavailable (storage not open)");
@@ -166,6 +176,7 @@ export async function createTrackdexContainer(
 		placeReindex,
 		linkIndex,
 		trackQuery,
+		vaultTrackHandler,
 		resetIndex,
 		async shutdown(): Promise<void> {
 			await indexing.markInterruptedIfScanActive();
