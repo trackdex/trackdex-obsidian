@@ -55,3 +55,5 @@ export {
 	computeTrackMetrics,
 	haversineDistanceM,
 } from "domain/track/track-metrics";
+export type { AggregatedTrackCatalogData } from "domain/track/segment-aggregation";
+export { aggregateParsedTrackForCatalog } from "domain/track/segment-aggregation";
