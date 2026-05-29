@@ -53,3 +53,10 @@ flowchart TD
 ### Prerequisite
 
 - Milestone **0.4** complete (**0.4-14** PASS).
+
+### Follow-ups from operator smoke (2026-05-29)
+
+→ [evidence/manual-smoke-follow-ups.md](./evidence/manual-smoke-follow-ups.md)
+
+- Sidebar empty state при наличии индекса → **0.6**
+- `.gpx.gz` / `.tcx.gz` без карты и индекса → parser extension + track view (см. IMPLEMENTATION_PLAN backlog)
