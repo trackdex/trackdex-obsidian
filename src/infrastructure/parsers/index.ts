@@ -6,6 +6,7 @@ export {
 	type GpxLatLng,
 	type ParseGpxTrackResult,
 } from "./gpx-parser";
+export { createFitGzParserPort } from "./fit-gz-parser";
 export { createFitParserPort } from "./fit-parser";
 export {
 	createDefaultParserRouter,

@@ -95,7 +95,7 @@ test("parser router: unknown extension returns unsupported_extension", async () 
 	assert.match(result.error.message, /kml/);
 });
 
-test("parser router: default stubs return parse_failed for unimplemented formats", async () => {
+test("parser router: default gpx and fit.gz adapters are wired (not stubs)", async () => {
 	const { createDefaultParserRouter } = importTs(
 		"../src/infrastructure/parsers/parser-router.ts",
 	);
@@ -105,7 +105,7 @@ test("parser router: default stubs return parse_failed for unimplemented formats
 		const result = await router.parse(baseInput(extension));
 		assert.equal(result.ok, false);
 		assert.equal(result.error.code, "parse_failed");
-		assert.match(result.error.message, /not implemented/);
+		assert.doesNotMatch(result.error.message, /not implemented/);
 	}
 });
 

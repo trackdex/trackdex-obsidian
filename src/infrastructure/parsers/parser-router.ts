@@ -1,9 +1,11 @@
 import type { ParseTrackInput, TrackParserPort } from "application/ports/parser-port";
 import { domainError } from "domain/shared/errors";
 import { err } from "domain/shared/result";
-import type { TrackFileExtension } from "domain/track/parsed-track";
 import { normalizeTrackFileExtension } from "domain/track/track-file-extension";
+import type { TrackFileExtension } from "domain/track/parsed-track";
+import { createFitGzParserPort } from "./fit-gz-parser";
 import { createFitParserPort } from "./fit-parser";
+import { createGpxParserPort } from "./gpx-parser";
 import { createTcxParserPort } from "./tcx-parser";
 
 /** Per-format parsers wired into {@link createParserRouter}. */
@@ -46,21 +48,13 @@ export function createParserRouter(deps: ParserRouterDeps): TrackParserPort {
 	};
 }
 
-function createUnimplementedFormatParserPort(
-	format: TrackFileExtension,
-): TrackParserPort {
-	return {
-		parse: async () =>
-			err(domainError("parse_failed", `${format} parser not implemented`)),
-	};
-}
-
-/** Default router; GPX/FIT.GZ stubs until 0.4-02 / 0.4-05 land. */
+/** Default router with production format adapters. */
 export function createDefaultParserRouter(): TrackParserPort {
+	const fit = createFitParserPort();
 	return createParserRouter({
-		gpx: createUnimplementedFormatParserPort("gpx"),
+		gpx: createGpxParserPort(),
 		tcx: createTcxParserPort(),
-		fit: createFitParserPort(),
-		fitGz: createUnimplementedFormatParserPort("fit.gz"),
+		fit,
+		fitGz: createFitGzParserPort({ fit }),
 	});
 }
