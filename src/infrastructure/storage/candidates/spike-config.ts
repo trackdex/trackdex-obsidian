@@ -4,6 +4,12 @@
  */
 export const ENABLE_STORAGE_SPIKE = false;
 
+/**
+ * v1 schema smoke commands (0.2-11). Keep `false` in committed builds.
+ * Uses production `index.sqlite` + `tracks` table via container repos.
+ */
+export const ENABLE_STORAGE_SCHEMA_SMOKE = false;
+
 /** Default candidate for the dev spike command. */
 export type StorageSpikeBackend = "sqljs" | "indexeddb";
 

@@ -1,6 +1,9 @@
 import {registerTrackdexCommands} from "../infrastructure/obsidian/commands-registry";
 import {ENABLE_FIT_PARSER_SPIKE} from "../infrastructure/parsers/candidates/spike-config";
-import {ENABLE_STORAGE_SPIKE} from "../infrastructure/storage/candidates/spike-config";
+import {
+	ENABLE_STORAGE_SCHEMA_SMOKE,
+	ENABLE_STORAGE_SPIKE,
+} from "../infrastructure/storage/candidates/spike-config";
 import {t} from "../ui/i18n";
 import {TrackdexSettingTab} from "../ui/settings/settings-tab";
 import {openTracksSidebar} from "../ui/views/open-tracks-sidebar";
@@ -32,6 +35,13 @@ export async function bootstrapTrackdexPlugin(
 	});
 
 	plugin.addSettingTab(new TrackdexSettingTab(plugin.app, plugin));
+
+	if (ENABLE_STORAGE_SCHEMA_SMOKE) {
+		const {registerStorageSchemaSmokeCommands} = await import(
+			"../infrastructure/storage/register-storage-schema-smoke-command"
+		);
+		registerStorageSchemaSmokeCommands(plugin, container.tracks);
+	}
 
 	if (ENABLE_STORAGE_SPIKE || ENABLE_FIT_PARSER_SPIKE) {
 		await registerOptionalSpikeCommands(plugin);

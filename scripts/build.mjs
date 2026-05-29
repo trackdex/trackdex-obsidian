@@ -56,12 +56,16 @@ function stripSpikeCommandModulesPlugin() {
 	const spikeCommandStub = [
 		"export function registerStorageSpikeCommand() {}",
 		"export function registerFitParserSpikeCommand() {}",
+		"export function registerStorageSchemaSmokeCommands() {}",
 	].join("\n");
 	return {
 		name: "trackdex-strip-spike-commands",
 		setup(build) {
 			build.onResolve(
-				{ filter: /register-(storage|fit-parser)-spike-command/ },
+				{
+					filter:
+						/register-(storage|fit-parser)-spike-command|register-storage-schema-smoke-command/,
+				},
 				() => ({
 					path: "trackdex-spike-stub",
 					namespace: "trackdex-spike-stub",
