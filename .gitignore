@@ -36,20 +36,6 @@ pnpm-debug.log*
 
 # --- OS ---
 .DS_Store
-Thumbs.db
-Desktop.ini
-ehthumbs.db
 
 # --- Editors (personal / machine-specific) ---
 .vscode/
-.idea/
-*.iml
-*.swp
-*~
-
-# Cursor local state (project rules live in AGENTS.md / committed docs)
-.cursor/
-
-# --- Optional output dirs ---
-dist/
-coverage/

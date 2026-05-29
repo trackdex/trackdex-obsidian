@@ -1,0 +1,44 @@
+---
+description: Core code quality rules for Obsidian plugin agents
+alwaysApply: true
+---
+
+# Agent Code Quality
+## Scope and behavior
+- Apply these rules to new code and to the smallest relevant area touched by the task. Do not start broad architecture rewrites only to satisfy this rule unless the user asks for them.
+- Start from the existing architecture. Read nearby code first; extend established module boundaries, naming, error handling, and test style instead of inventing parallel patterns.
+- Keep edits focused on the requested behavior. Refactor only when it removes real duplication, isolates infrastructure detail, or gives a stable domain concept a useful name.
+
+## Architecture boundaries
+- Keep `src/main.ts` lifecycle-only: plugin load/unload, settings load/save wiring, command/view registration, and composition of adapters.
+- Put domain rules and types in domain modules. Domain code must not import Obsidian APIs, DOM APIs, UI modules, storage adapters, filesystem details, logging implementations, or other infrastructure.
+- Put use cases and port interfaces in application modules. Application code may depend on domain types and small ports, but not on concrete Obsidian, vault, IndexedDB/SQL, Leaflet, or DOM implementations.
+- Put Obsidian, vault, map, DOM, persistence, and logging implementations in infrastructure or UI modules. These modules adapt external APIs to application ports.
+- Keep import dependencies pointing inward: composition may import adapters and use cases; adapters may import application ports and domain types; application may import domain; domain imports no outer layers.
+- Keep modules cohesive and role-specific: parsing, validation, storage adapters, map UI, commands, and settings should each have one primary reason to change.
+- Make data contracts explicit with TypeScript types. Avoid `any`, ambiguous records, boolean traps, stringly typed protocols, and hidden shape assumptions.
+- Example boundary: application declares a `TrackRepository` port; a vault adapter implements it; domain never imports either Obsidian or the adapter.
+
+## State and data flow
+- Each piece of mutable state, such as settings, catalog/index, selection, and map view state, must have one canonical owner. Read through that owner and update through explicit commands, use cases, or store APIs.
+- Keep data flow one-way: user or system event -> canonical owner/use case -> state change -> derived UI and registered side effects.
+- Do not keep parallel copies in views, adapters, globals, or callbacks that later need reconciliation.
+- Avoid callbacks that mutate peer modules or shared singletons as a back channel.
+
+Example flow: command callback -> application use case -> settings/catalog owner -> view re-render or map refresh.
+
+## Runtime safety
+- Preserve user data and vault safety. Validate external/file input, handle malformed GPX or metadata gracefully, and never access outside the vault unless the user explicitly requests it.
+- Keep startup cheap. Do not scan the vault, parse large files, construct map UI, or open storage connections during plugin load unless the startup path truly needs it.
+- Register cleanup through Obsidian helpers such as `registerEvent`, `registerDomEvent`, `registerInterval`, view lifecycle APIs, and unload callbacks. Do not leak listeners, timers, DOM nodes, or global state.
+- Handle errors at boundaries. Add actionable context, preserve causes when useful, use the project logger if one exists, and show user notices only for user-relevant failures. Do not introduce a logging framework only to satisfy this rule.
+- Use async deliberately. Await persistence and parsing, avoid fire-and-forget work unless it is registered or cancellable, and prevent races around settings, views, and file changes.
+- Keep UI code accessible and disposable. Use Obsidian components where appropriate, preserve focus, avoid hard-coded layout assumptions, and clean up rendered elements.
+
+Startup rule of thumb: register commands and views during `onload`; defer vault scans, parsing, indexing, and heavy UI construction until a command, view activation, or explicit user action needs them.
+
+## Tests and checks
+- Prefer deterministic, testable pure logic. Push Obsidian API calls, DOM work, storage, time, and randomness to adapters or composition code.
+- Match tests to risk. Prioritize focused unit tests for domain rules, parsers, migrations, port contracts, and bug fixes. Add adapter or integration tests when adapter behavior is non-trivial.
+- Skip tests for thin wiring, one-line pass-throughs, and simple Obsidian/DOM shells unless they contain meaningful behavior.
+- After edits, run the narrowest practical check first: targeted tests, then relevant test scripts, then `npm run build`, then lints or IDE diagnostics. Fix diagnostics introduced by the change.
