@@ -52,6 +52,8 @@ test("aggregateParsedTrackForCatalog: multi-segment fixture → one row + segmen
 	assert.equal(aggregated.titleFromFile, "Morning ride");
 	assert.equal(aggregated.sportRaw, "cycling");
 	assert.deepEqual(aggregated.bbox, parsed.bbox);
+	assert.ok(aggregated.polylineSimplified);
+	assert.ok(aggregated.polylineSimplified.length >= 2);
 
 	assert.equal(aggregated.times.startedAtRaw, "2024-06-01T08:00:00Z");
 	assert.equal(aggregated.times.endedAtRaw, "2024-06-01T08:10:00Z");

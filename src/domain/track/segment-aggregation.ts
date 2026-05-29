@@ -1,5 +1,6 @@
-import type { Bbox } from "domain/shared/geo";
+import type { Bbox, LatLng } from "domain/shared/geo";
 import { deriveTrackDataFlags } from "domain/track/derive-track-data-flags";
+import { computeTrackMapGeometry } from "domain/track/polyline-simplify";
 import type { ParsedTrack } from "domain/track/parsed-track";
 import type { TrackDataFlags } from "domain/track/track-data-flags";
 import type { TrackSegment } from "domain/track/track-segment";
@@ -19,6 +20,8 @@ export interface AggregatedTrackCatalogData {
 	readonly titleFromFile: string | null;
 	readonly sportRaw: string | null;
 	readonly bbox: Bbox | null;
+	/** Simplified route for map rendering (`polyline_simplified_json`). */
+	readonly polylineSimplified: LatLng[] | null;
 	/** Persisted as `segments_json` when non-empty; null when the parser found no segments. */
 	readonly segments: TrackSegment[] | null;
 	readonly times: NormalizedTrackTimes;
@@ -37,11 +40,13 @@ export function aggregateParsedTrackForCatalog(
 	const times = normalizeTrackTimes(track, context);
 	const metrics = computeTrackMetrics(track.points, times, context);
 	const segments = track.segments.length > 0 ? [...track.segments] : null;
+	const mapGeometry = computeTrackMapGeometry(track.points);
 
 	return {
 		titleFromFile: track.titleFromFile,
 		sportRaw: track.sportRaw,
-		bbox: track.bbox,
+		bbox: mapGeometry.bbox,
+		polylineSimplified: mapGeometry.polylineSimplified,
 		segments,
 		times,
 		metrics,

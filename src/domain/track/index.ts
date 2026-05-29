@@ -58,3 +58,13 @@ export {
 } from "domain/track/track-metrics";
 export type { AggregatedTrackCatalogData } from "domain/track/segment-aggregation";
 export { aggregateParsedTrackForCatalog } from "domain/track/segment-aggregation";
+export type { TrackMapGeometry } from "domain/track/polyline-simplify";
+export {
+	POLYLINE_SIMPLIFY_TOLERANCE_M,
+	computeTrackBbox,
+	computeTrackMapGeometry,
+	isBboxValidForMapFit,
+	simplifyTrackPolyline,
+	stringifyPolylineSimplifiedJson,
+	stringifyTrackBboxJson,
+} from "domain/track/polyline-simplify";
