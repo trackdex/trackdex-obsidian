@@ -9,11 +9,11 @@ const manifestPath = join(ROOT, "manifest.json");
 const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
 const { minAppVersion } = manifest;
 manifest.version = targetVersion;
-writeFileSync(manifestPath, JSON.stringify(manifest, null, "\t"));
+writeFileSync(manifestPath, JSON.stringify(manifest, null, "\t") + "\n");
 
 const versionsPath = join(ROOT, "versions.json");
 const versions = JSON.parse(readFileSync(versionsPath, "utf8"));
-if (!Object.values(versions).includes(minAppVersion)) {
+if (!Object.prototype.hasOwnProperty.call(versions, targetVersion)) {
 	versions[targetVersion] = minAppVersion;
-	writeFileSync(versionsPath, JSON.stringify(versions, null, "\t"));
+	writeFileSync(versionsPath, JSON.stringify(versions, null, "\t") + "\n");
 }
