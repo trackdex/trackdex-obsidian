@@ -46,3 +46,9 @@ Optional for automated gate; recommended before user-facing release:
 ## Gate for 0.4
 
 Scan pipeline enqueues parse jobs (`full-scan.test.mjs`, `incremental-index.test.mjs`); production parser implementation deferred to milestone 0.4.
+
+## Manual smoke follow-ups (backlog)
+
+Operator feedback after smoke test — tracked for **0.5 / 0.6 / 0.9**, not blocking 0.3 gate:
+
+→ [manual-smoke-follow-ups.md](./manual-smoke-follow-ups.md)

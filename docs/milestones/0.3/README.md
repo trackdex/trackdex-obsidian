@@ -112,3 +112,4 @@ flowchart TD
 
 - Obsidian desktop/mobile operator sessions: **optional** for gate (automated PASS documented in [evidence/milestone-acceptance.md](./evidence/milestone-acceptance.md)).
 - `isDesktopOnly: false` — mobile manual smoke recommended before release, not blocking 0.3 gate.
+- **Follow-ups from operator smoke (2026-05-29):** [evidence/manual-smoke-follow-ups.md](./evidence/manual-smoke-follow-ups.md) — auto-open catalog, progress UI, settings stats, index CTA in track view, reactive state (→ 0.5 / 0.6 / 0.9).
