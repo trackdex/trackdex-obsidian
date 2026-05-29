@@ -11,10 +11,10 @@
 | **Primary v1 parser (recommended)** | **`fit-file-parser`** (npm) — ES module, maps cleanly to `ParsedTrack`, smaller bundle |
 | **Alternate / reference** | **`@garmin-fit/sdk`** — official decoder; larger bundle; numeric sport enums need profile lookup in production |
 | **`.fit.gz` strategy** | `DecompressionStream('gzip')` on raw vault bytes, then parse FIT binary (no Node `zlib` in plugin path) |
-| **Gate status** | **Go with constraints** — both candidates parse fixtures in Node; Obsidian manual smoke **not run** (plan below) |
+| **Gate status** | **Closed (0.1-06)** — go with constraints; recorded in `docs/TECHNICAL_DESIGN.md` §2.5; Obsidian manual smoke still pending before 0.4/release |
 | **Production wiring** | Deferred to **0.4**; spike behind `ENABLE_FIT_PARSER_SPIKE` (default `false`) |
 
-**Constraints for v1:** bundle adds ~0.13 MB (fit-file-parser) on top of current `main.js`; validate cold-parse time and memory on Android with real user FIT files before **0.1-06**.
+**Constraints for v1:** bundle adds ~0.13 MB (fit-file-parser) on top of current `main.js`; validate cold-parse time and memory on Android with real user FIT files before **0.4** / release (manual smoke plan below).
 
 ---
 
@@ -152,4 +152,4 @@ Aligns with [`ParsedTrack`](../../../src/domain/track/parsed-track.ts) / [`Track
 - [x] Recommendation: **go with constraints** (`fit-file-parser` primary)
 - [x] Spike does not break `npm run build` with default flag
 
-**Blocks:** [0.1-06](../0.1-06-record-fit-parser-decision.md) (record in TECHNICAL_DESIGN), milestone **0.4** (production parser).
+**Blocks:** ~~[0.1-06](../0.1-06-record-fit-parser-decision.md)~~ **done** — decision in TECHNICAL_DESIGN §2.5. Unblocks milestone **0.4** (production parser).

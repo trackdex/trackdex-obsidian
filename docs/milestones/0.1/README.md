@@ -72,5 +72,5 @@ Spike-задачи **0.1-03** и **0.1-04** не зависят от кода с
 
 - `npm run build` и smoke-тест проходят.
 - Нет прямых импортов concrete storage вне `infrastructure/`.
-- В `docs/TECHNICAL_DESIGN.md` зафиксированы решения по storage и FIT (или явно сужен scope v1 для FIT).
-- Milestone **0.2** разблокируется только после **0.1-05**; milestone **0.4** — после **0.1-06** (или явного изменения scope форматов).
+- В `docs/TECHNICAL_DESIGN.md` зафиксированы решения по storage (**0.1-05**, §2.1) и FIT (**0.1-06**, §2.5).
+- Milestone **0.2** разблокируется после **0.1-05** (+ **0.1-09** bootstrap); milestone **0.4** — после **0.1-06** (FIT gate closed: `fit-file-parser`, `.fit` + `.fit.gz`).

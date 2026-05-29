@@ -44,7 +44,7 @@
 **Acceptance criteria**
 - [ ] При первом включении плагина индекс не стартует автоматически; показывается экран с объяснением и кнопкой запуска.
 - [ ] После подтверждения выполняется полный рекурсивный scan всего vault по `.gpx/.tcx/.fit/.fit.gz` (case-insensitive).
-- [ ] FIT/FIT.GZ остаются целевыми форматами v1, но требуют раннего parser feasibility gate: выбранная parser-библиотека должна собираться в bundle, работать на desktop/mobile Obsidian и не раздувать плагин неприемлемо.
+- [ ] FIT/FIT.GZ — целевые форматы v1; parser gate **закрыт (0.1-06):** primary **`fit-file-parser`**, `.fit.gz` через `DecompressionStream('gzip')`, ~+0.13 MB к бандлу; evidence `docs/milestones/0.1/evidence/fit-parser-spike.md`, решение в `docs/TECHNICAL_DESIGN.md` §2.5. Перед релизом — manual mobile smoke (см. §2.5 constraints).
 - [ ] По умолчанию исключаются `.obsidian/` и `.trash/`; поддерживаются пользовательские exclude patterns (vault-relative, glob/ignore-like).
 - [ ] После первого согласия автоскан включается на следующих запусках, пока пользователь не поставил паузу.
 - [ ] Поддерживается инкрементальная индексация по событиям `create/modify/delete/rename`.
@@ -296,7 +296,8 @@ Must
   - `isDesktopOnly: false`.
   - Mobile support крайне желательна для v1; целевое поведение desktop/mobile одинаковое.
   - Storage/mobile spike (**0.1-03**, evidence `docs/milestones/0.1/evidence/storage-spike.md`): **закрыт** — primary adapter **sql.js** + `index.sqlite`, `isDesktopOnly: false` подтверждён на desktop и Android; решение зафиксировано в `docs/TECHNICAL_DESIGN.md` §2.1 (**0.1-05**).
-  - Mobile performance thresholds остаются инженерными ориентирами до FIT parser baseline; desktop thresholds — release gate для v1.
+  - FIT/parser spike (**0.1-04**, evidence `docs/milestones/0.1/evidence/fit-parser-spike.md`): **закрыт (0.1-06)** — `fit-file-parser`, `.fit` + `.fit.gz` in scope; automated Node baseline; Obsidian mobile manual smoke — до 0.4/release (§2.5).
+  - Mobile performance thresholds остаются инженерными ориентирами до FIT manual mobile baseline; desktop thresholds — release gate для v1.
 - Безопасность/приватность:
   - Offline-first; сеть в v1 только для tiles.
   - Без скрытой telemetry, без автосендов логов/данных vault.
@@ -321,9 +322,9 @@ Must
 - Риск: рост размера индекс/логов в sync-сценариях.  
   Влияние: лишний sync-трафик и storage.  
   Митигирование: ротация логов, компактная схема индекса, документирование plugin data dir и sync-практик.
-- Риск: FIT/FIT.GZ parser несовместим с mobile/bundle constraints.  
-  Влияние: задержка parser milestone или пересмотр форматов v1.  
-  Митигирование: ранний parser feasibility gate до полноценной реализации метрик.
+- Риск: FIT/FIT.GZ parser на mobile (память, `DecompressionStream`, cold-parse latency).  
+  Влияние: деградация UX или отложенный release gate на Android.  
+  Митигирование: gate **0.1-06** (fit-file-parser, bundle measured); manual mobile smoke и profiling в **0.4**; parse errors не ломают каталог.
 
 ## 6. Definition of Ready (чеклист)
 - [x] Для каждого Must-требования есть измеримые acceptance criteria.
@@ -334,4 +335,4 @@ Must
 
 ## Открытые пункты (если остались)
 - ~~Критичный технический gate: storage adapter~~ — **закрыт (0.1-05):** sql.js + `index.sqlite`, `isDesktopOnly: false`; evidence `docs/milestones/0.1/evidence/storage-spike.md`.
-- Критичный технический gate: подтвердить FIT/FIT.GZ parser на desktop/mobile Obsidian, включая bundle size и отсутствие недоступных runtime API; если gate не закрывается, явно пересмотреть форматный scope v1.
+- ~~Критичный технический gate: FIT/FIT.GZ parser~~ — **закрыт (0.1-06):** `fit-file-parser`, `.fit` + `.fit.gz`, `DecompressionStream` для gzip, ~+0.13 MB; evidence `docs/milestones/0.1/evidence/fit-parser-spike.md`; residual: Obsidian mobile manual smoke до 0.4.

@@ -44,7 +44,7 @@ Done criteria:
 - Smoke test still passes.
 - No direct storage-adapter imports outside infrastructure layer.
 - Milestone 0.2 storage gate: **closed** in `docs/TECHNICAL_DESIGN.md` §2.1 (sql.js + `index.sqlite`, `isDesktopOnly: false`); 0.2 starts after 0.1-09 bootstrap skeleton lands.
-- Milestone 0.4 is blocked until the FIT/FIT.GZ parser decision is recorded or v1 format scope is explicitly changed.
+- Milestone 0.4 FIT gate: **closed** in `docs/TECHNICAL_DESIGN.md` §2.5 (`fit-file-parser`, `.fit` + `.fit.gz` in v1 scope, `DecompressionStream` for gzip); production parser wiring is **0.4**.
 
 ## Milestone 0.2 — Storage schema and indexing meta
 
@@ -98,8 +98,8 @@ Scope:
 - Implement parser router and format parsers:
   - GPX
   - TCX
-  - FIT (if feasibility gate passed)
-  - FIT.GZ (if feasibility gate passed)
+  - FIT (§2.5 — `fit-file-parser`)
+  - FIT.GZ (§2.5 — gzip decompress + `fit-file-parser`)
 - Normalize timestamps/timezones and raw values.
 - Compute metrics (computed-only pipeline):
   - date, elapsed, distance, avg/max speed, elevation gain/loss (3m threshold),
