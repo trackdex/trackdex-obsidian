@@ -5,15 +5,6 @@ import type {
 } from "../../../domain/track/parsed-track";
 import type { TrackSegment } from "../../../domain/track/track-segment";
 
-const SEMICIRCLE_TO_DEG = 180 / 2 ** 31;
-
-function semicirclesToDegrees(value: number | undefined): number | null {
-	if (value === undefined || value === null || Number.isNaN(value)) {
-		return null;
-	}
-	return value * SEMICIRCLE_TO_DEG;
-}
-
 function toIsoString(value: unknown): string | null {
 	if (value instanceof Date) {
 		return value.toISOString();
@@ -93,89 +84,3 @@ export function mapFitFileParserToParsedTrack(parsed: {
 	};
 }
 
-/** Map Garmin FIT SDK decoder messages into {@link ParsedTrack}. */
-export function mapGarminSdkToParsedTrack(messages: {
-	recordMesgs?: readonly Record<string, unknown>[];
-	sessionMesgs?: readonly Record<string, unknown>[];
-	lapMesgs?: readonly Record<string, unknown>[];
-}): ParsedTrack {
-	const points: ParsedTrackPoint[] = [];
-	for (const record of messages.recordMesgs ?? []) {
-		const lat = semicirclesToDegrees(record["positionLat"] as number | undefined);
-		const lon = semicirclesToDegrees(
-			record["positionLong"] as number | undefined,
-		);
-		if (lat === null || lon === null) {
-			continue;
-		}
-		const timestamp = record["timestamp"];
-		points.push({
-			lat,
-			lon,
-			elevationM:
-				typeof record["altitude"] === "number" ? record["altitude"] : null,
-			timestampRaw: toIsoString(timestamp),
-			hrBpm:
-				typeof record["heartRate"] === "number" ? record["heartRate"] : null,
-			powerW: typeof record["power"] === "number" ? record["power"] : null,
-			cadenceRpm:
-				typeof record["cadence"] === "number" ? record["cadence"] : null,
-			speedMps: typeof record["speed"] === "number" ? record["speed"] : null,
-		});
-	}
-
-	const session = messages.sessionMesgs?.[0];
-	const sportEnum = session?.["sport"];
-	const sportRaw = typeof sportEnum === "string" ? sportEnum : null;
-
-	const segments: TrackSegment[] = (messages.lapMesgs ?? []).map(
-		(lap, index) => ({
-			id: `lap-${String(index + 1)}`,
-			name: null,
-			startedAtRaw: toIsoString(lap["startTime"]),
-			endedAtRaw: toIsoString(lap["timestamp"]),
-			pointCount: null,
-			bbox: null,
-		}),
-	);
-
-	return {
-		titleFromFile: null,
-		sportRaw,
-		startedAtRaw: toIsoString(session?.["startTime"]),
-		endedAtRaw: toIsoString(session?.["timestamp"]),
-		points,
-		segments,
-		bbox: computeBbox(points),
-	};
-}
-
-export function summarizeParsedTrack(track: ParsedTrack): {
-	pointCount: number;
-	segmentCount: number;
-	hasHr: boolean;
-	hasPower: boolean;
-	hasCadence: boolean;
-} {
-	let hasHr = false;
-	let hasPower = false;
-	let hasCadence = false;
-	for (const p of track.points) {
-		if (p.hrBpm !== null) {
-			hasHr = true;
-		}
-		if (p.powerW !== null) {
-			hasPower = true;
-		}
-		if (p.cadenceRpm !== null) {
-			hasCadence = true;
-		}
-	}
-	return {
-		pointCount: track.points.length,
-		segmentCount: track.segments.length,
-		hasHr,
-		hasPower,
-		hasCadence,
-	};
-}

@@ -1,6 +1,5 @@
 import {registerTrackdexCommands} from "../infrastructure/obsidian/commands-registry";
 import {registerVaultIndexEvents} from "../infrastructure/obsidian/vault-index-events";
-import {ENABLE_FIT_PARSER_SPIKE} from "../infrastructure/parsers/candidates/spike-config";
 import {
 	ENABLE_STORAGE_SCHEMA_SMOKE,
 	ENABLE_STORAGE_SPIKE,
@@ -55,23 +54,10 @@ export async function bootstrapTrackdexPlugin(
 		registerStorageSchemaSmokeCommands(plugin, container.tracks);
 	}
 
-	if (ENABLE_STORAGE_SPIKE || ENABLE_FIT_PARSER_SPIKE) {
-		await registerOptionalSpikeCommands(plugin);
-	}
-}
-
-async function registerOptionalSpikeCommands(plugin: TrackdexPluginHost): Promise<void> {
 	if (ENABLE_STORAGE_SPIKE) {
 		const {registerStorageSpikeCommand} = await import(
 			"../infrastructure/storage/candidates/register-storage-spike-command"
 		);
 		registerStorageSpikeCommand(plugin);
-	}
-
-	if (ENABLE_FIT_PARSER_SPIKE) {
-		const {registerFitParserSpikeCommand} = await import(
-			"../infrastructure/parsers/candidates/register-fit-parser-spike-command"
-		);
-		registerFitParserSpikeCommand(plugin);
 	}
 }

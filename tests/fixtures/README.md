@@ -15,6 +15,6 @@
 | `partial-activity.fit.gz` | partial | gzip of `partial-activity.fit` (milestone **0.4-12**). |
 | `malformed-activity.fit.gz` | invalid | Invalid gzip payload (milestone **0.4-12**). |
 
-Used by `tests/parsers/fixture-matrix.test.mjs` (milestone **0.4-12**), `tests/fit-parser-spike.test.mjs` (**0.1-04**), `tests/gpx-parser-port.test.mjs` (**0.4-02**), `tests/tcx-parser.test.mjs` (**0.4-03**), `tests/fit-parser.test.mjs` (**0.4-04**), and `tests/fit-gz-parser.test.mjs` (**0.4-05**).
+Used by `tests/parsers/fixture-matrix.test.mjs` (milestone **0.4-12**), `tests/gpx-parser-port.test.mjs` (**0.4-02**), `tests/tcx-parser.test.mjs` (**0.4-03**), `tests/fit-parser.test.mjs` (**0.4-04**), and `tests/fit-gz-parser.test.mjs` (**0.4-05**).
 
 Regenerate synthetic FIT fixtures with `node scripts/generate-partial-fit-fixtures.mjs`.

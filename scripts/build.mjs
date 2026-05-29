@@ -55,7 +55,6 @@ function sqlWasmEmbedPlugin() {
 function stripSpikeCommandModulesPlugin() {
 	const spikeCommandStub = [
 		"export function registerStorageSpikeCommand() {}",
-		"export function registerFitParserSpikeCommand() {}",
 		"export function registerStorageSchemaSmokeCommands() {}",
 	].join("\n");
 	return {
@@ -64,7 +63,7 @@ function stripSpikeCommandModulesPlugin() {
 			build.onResolve(
 				{
 					filter:
-						/register-(storage|fit-parser)-spike-command|register-storage-schema-smoke-command/,
+						/register-storage-spike-command|register-storage-schema-smoke-command/,
 				},
 				() => ({
 					path: "trackdex-spike-stub",
