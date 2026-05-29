@@ -27,7 +27,6 @@
 		"@xmldom/xmldom": "^0.9.8",
 		"esbuild": "0.25.5",
 		"eslint-plugin-obsidianmd": "0.1.9",
-		"fit-file-parser": "^3.0.1",
 		"globals": "14.0.0",
 		"jiti": "2.6.1",
 		"tslib": "2.4.0",
@@ -35,6 +34,7 @@
 		"typescript-eslint": "8.35.1"
 	},
 	"dependencies": {
+		"fit-file-parser": "^3.0.1",
 		"leaflet": "^1.9.4",
 		"obsidian": "latest",
 		"sql.js": "^1.12.0"

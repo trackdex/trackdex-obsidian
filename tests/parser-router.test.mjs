@@ -101,12 +101,24 @@ test("parser router: default stubs return parse_failed for unimplemented formats
 	);
 	const router = createDefaultParserRouter();
 
-	for (const extension of ["gpx", "fit", "fit.gz"]) {
+	for (const extension of ["gpx", "fit.gz"]) {
 		const result = await router.parse(baseInput(extension));
 		assert.equal(result.ok, false);
 		assert.equal(result.error.code, "parse_failed");
 		assert.match(result.error.message, /not implemented/);
 	}
+});
+
+test("parser router: default fit adapter is wired (not a stub)", async () => {
+	const { createDefaultParserRouter } = importTs(
+		"../src/infrastructure/parsers/parser-router.ts",
+	);
+	const router = createDefaultParserRouter();
+	const result = await router.parse(baseInput("fit"));
+
+	assert.equal(result.ok, false);
+	assert.equal(result.error.code, "parse_failed");
+	assert.doesNotMatch(result.error.message, /not implemented/);
 });
 
 test("parser router: default tcx adapter is wired (not a stub)", async () => {

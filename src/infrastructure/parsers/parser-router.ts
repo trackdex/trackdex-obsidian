@@ -3,6 +3,7 @@ import { domainError } from "domain/shared/errors";
 import { err } from "domain/shared/result";
 import type { TrackFileExtension } from "domain/track/parsed-track";
 import { normalizeTrackFileExtension } from "domain/track/track-file-extension";
+import { createFitParserPort } from "./fit-parser";
 import { createTcxParserPort } from "./tcx-parser";
 
 /** Per-format parsers wired into {@link createParserRouter}. */
@@ -54,12 +55,12 @@ function createUnimplementedFormatParserPort(
 	};
 }
 
-/** Default router with TCX adapter; GPX/FIT/FIT.GZ stubs until 0.4-02 / 0.4-04–0.4-05 land. */
+/** Default router; GPX/FIT.GZ stubs until 0.4-02 / 0.4-05 land. */
 export function createDefaultParserRouter(): TrackParserPort {
 	return createParserRouter({
 		gpx: createUnimplementedFormatParserPort("gpx"),
 		tcx: createTcxParserPort(),
-		fit: createUnimplementedFormatParserPort("fit"),
+		fit: createFitParserPort(),
 		fitGz: createUnimplementedFormatParserPort("fit.gz"),
 	});
 }
