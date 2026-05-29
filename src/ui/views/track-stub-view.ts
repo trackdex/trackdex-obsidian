@@ -14,7 +14,7 @@ import {
 	type TrackRouteLayer,
 } from "../../infrastructure/map/track-route-layer";
 import {parseGpxTrackPoints} from "../../infrastructure/parsers/gpx-parser";
-import type TrackdexPlugin from "../../main";
+import type {TrackdexPluginHost} from "../../composition/plugin-host";
 import {
 	refreshViewNavButtons,
 	syncViewHeaderTitle,
@@ -66,7 +66,7 @@ export class TrackStubView extends TextFileView {
 
 	constructor(
 		leaf: WorkspaceLeaf,
-		private readonly plugin: TrackdexPlugin,
+		private readonly plugin: TrackdexPluginHost,
 	) {
 		super(leaf);
 		this.navigation = true;

@@ -1,7 +1,7 @@
 import {App, PluginSettingTab, Setting} from "obsidian";
 import {DEFAULT_BASEMAP_TILE_URL} from "../../constants";
 import {normalizeBasemapTileUrl} from "../../infrastructure/map/track-basemap";
-import type TrackdexPlugin from "../../main";
+import type {TrackdexPluginHost} from "../../composition/plugin-host";
 
 export interface TrackdexSettings {
 	tracksFolder: string;
@@ -26,9 +26,9 @@ export function migrateSettings(
 }
 
 export class TrackdexSettingTab extends PluginSettingTab {
-	plugin: TrackdexPlugin;
+	plugin: TrackdexPluginHost;
 
-	constructor(app: App, plugin: TrackdexPlugin) {
+	constructor(app: App, plugin: TrackdexPluginHost) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
