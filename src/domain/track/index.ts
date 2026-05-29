@@ -40,3 +40,12 @@ export type {
 } from "domain/track/track-query";
 export type { TimezoneSource } from "domain/track/timezone-source";
 export { TIMEZONE_SOURCES } from "domain/track/timezone-source";
+export type {
+	NormalizedTimestamp,
+	NormalizedTrackTimes,
+	TimeNormalizationContext,
+} from "domain/track/time-normalization";
+export {
+	normalizeTimestamp,
+	normalizeTrackTimes,
+} from "domain/track/time-normalization";
