@@ -1,1 +1,1 @@
-export { createSqlIndexMetaRepository } from "./sql-index-meta-repository";
+export { createSqlIndexMetaRepository } from "./index-meta-repository";
