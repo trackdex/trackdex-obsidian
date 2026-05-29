@@ -49,3 +49,9 @@ export {
 	normalizeTimestamp,
 	normalizeTrackTimes,
 } from "domain/track/time-normalization";
+export type { ComputedTrackMetrics } from "domain/track/track-metrics";
+export {
+	ELEVATION_GAIN_LOSS_THRESHOLD_M,
+	computeTrackMetrics,
+	haversineDistanceM,
+} from "domain/track/track-metrics";
