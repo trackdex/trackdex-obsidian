@@ -15,6 +15,9 @@ const importTs = jiti(import.meta.url, {
 const { runFullScan, createFullScanWorkQueue } = importTs(
 	"../src/application/workflows/full-scan.ts",
 );
+const { createScanProgress } = importTs(
+	"../src/application/indexing/scan-progress.ts",
+);
 
 function createMemoryTrackRepo(initial = []) {
 	const rows = new Map(initial.map((row) => [row.path, { ...row }]));
@@ -171,4 +174,37 @@ test("runFullScan: respects scan paused", async () => {
 	assert.equal(result.discovered, 0);
 	assert.equal(await tracks.findByPath("tracks/a.gpx"), null);
 	assert.equal((await indexMeta.get()).lastFullScanAtUtc, null);
+});
+
+test("runFullScan: updates scan progress counters during indexing", async () => {
+	const tracks = createMemoryTrackRepo();
+	const indexMeta = createMetaRepo();
+	const queue = createFullScanWorkQueue({ isMobile: false });
+	const progress = createScanProgress();
+	const snapshots = [];
+	progress.subscribe((snapshot) => snapshots.push({ ...snapshot }));
+
+	await runFullScan({
+		scanner: {
+			listTrackFiles: async () => [
+				{ path: "tracks/a.gpx", extension: "gpx", mtimeMs: 100, sizeBytes: 100 },
+				{ path: "tracks/b.tcx", extension: "tcx", mtimeMs: 200, sizeBytes: 200 },
+			],
+		},
+		tracks,
+		indexMeta,
+		clock,
+		queue,
+		scanProgress: progress,
+		indexTrackFile: async () => {},
+	});
+
+	const indexingSnapshots = snapshots.filter((s) => s.phase === "indexing");
+	assert.ok(indexingSnapshots.length > 0);
+	assert.equal(
+		indexingSnapshots.some((s) => s.completedCount === 2),
+		true,
+	);
+	assert.equal(progress.getSnapshot().phase, "idle");
+	assert.equal(progress.getSnapshot().active, false);
 });

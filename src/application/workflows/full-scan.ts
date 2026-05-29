@@ -1,3 +1,4 @@
+import type { ScanProgressReporter } from "application/indexing/scan-progress";
 import {
 	createBoundedWorkQueue,
 	resolveScanConcurrency,
@@ -31,6 +32,7 @@ export interface RunFullScanDeps {
 	readonly queue: BoundedWorkQueue;
 	readonly indexTrackFile?: IndexTrackFileJob;
 	readonly isScanPaused?: () => Promise<boolean>;
+	readonly scanProgress?: ScanProgressReporter;
 	readonly logger?: LoggerPort;
 }
 
@@ -56,17 +58,54 @@ function createStubIndexTrackJob(logger?: LoggerPort): IndexTrackFileJob {
  * Full vault scan (§7.2): discover supported files, register new rows as `pending`,
  * enqueue bounded index jobs, then persist `last_full_scan_at_utc`.
  */
+function wrapIndexJobWithProgress(
+	progress: ScanProgressReporter | undefined,
+	path: TrackPath,
+	sizeBytes: number | undefined,
+	indexTrackFile: IndexTrackFileJob,
+): () => Promise<void> {
+	return async (): Promise<void> => {
+		progress?.beginFile(path, { sizeBytes });
+		try {
+			await indexTrackFile(path);
+		} finally {
+			progress?.completeFile(path);
+		}
+	};
+}
+
 export async function runFullScan(deps: RunFullScanDeps): Promise<FullScanResult> {
 	const log = deps.logger?.child?.({ workflow: "full-scan" }) ?? deps.logger;
 	const indexTrackFile = deps.indexTrackFile ?? createStubIndexTrackJob(log);
+	const progress = deps.scanProgress;
 
 	if (deps.isScanPaused && (await deps.isScanPaused())) {
 		log?.info("full scan skipped: indexing paused");
 		return { discovered: 0, registered: 0, enqueued: 0 };
 	}
 
+	progress?.beginScan();
+
+	try {
+		return await runFullScanCore(deps, log, indexTrackFile, progress);
+	} finally {
+		progress?.endScan();
+	}
+}
+
+async function runFullScanCore(
+	deps: RunFullScanDeps,
+	log: LoggerPort | undefined,
+	indexTrackFile: IndexTrackFileJob,
+	progress: ScanProgressReporter | undefined,
+): Promise<FullScanResult> {
 	const discovered = await deps.scanner.listTrackFiles();
 	log?.info("full scan discovered track files", { count: discovered.length });
+	progress?.setDiscoveredTotal(discovered.length);
+
+	const sizeBytesByPath = new Map(
+		discovered.map((file) => [file.path, file.sizeBytes]),
+	);
 
 	const pathsToIndex: TrackPath[] = [];
 	let registered = 0;
@@ -103,8 +142,15 @@ export async function runFullScan(deps: RunFullScanDeps): Promise<FullScanResult
 		}
 	}
 
-	const tasks = pathsToIndex.map(
-		(path) => (): Promise<void> => indexTrackFile(path),
+	progress?.beginIndexing(pathsToIndex.length);
+
+	const tasks = pathsToIndex.map((path) =>
+		wrapIndexJobWithProgress(
+			progress,
+			path,
+			sizeBytesByPath.get(path),
+			indexTrackFile,
+		),
 	);
 	await deps.queue.runMany(tasks);
 	await deps.queue.whenIdle();

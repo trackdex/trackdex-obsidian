@@ -6,6 +6,7 @@ export interface DiscoveredTrackFile {
 	readonly path: TrackPath;
 	readonly extension: TrackFileExtension;
 	readonly mtimeMs: number;
+	readonly sizeBytes?: number;
 }
 
 /**

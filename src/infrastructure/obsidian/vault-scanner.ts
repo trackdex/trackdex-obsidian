@@ -20,6 +20,7 @@ export interface VaultFileCandidate {
 	readonly path: string;
 	readonly name: string;
 	readonly mtimeMs?: number;
+	readonly sizeBytes?: number;
 }
 
 /**
@@ -58,7 +59,12 @@ export function listTrackFilesFromCandidates(
 		if (!extension) {
 			continue;
 		}
-		discovered.push({ path, extension, mtimeMs: file.mtimeMs ?? 0 });
+		discovered.push({
+			path,
+			extension,
+			mtimeMs: file.mtimeMs ?? 0,
+			sizeBytes: file.sizeBytes,
+		});
 	}
 
 	discovered.sort((a, b) => a.path.localeCompare(b.path));
@@ -84,6 +90,7 @@ export function createObsidianVaultScanner(
 					path: file.path,
 					name: file.name,
 					mtimeMs: file.stat.mtime,
+					sizeBytes: file.stat.size,
 				}));
 			return Promise.resolve(
 				listTrackFilesFromCandidates(candidates, listOptions),
