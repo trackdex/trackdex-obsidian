@@ -63,6 +63,11 @@ export const en = {
 		trackMapTilesOffline:
 			"Map tiles unavailable. Showing route geometry only.",
 		trackMapNoGeometry: "No route geometry available for this track.",
+		trackSegmentListTitle: "Segments",
+		trackSegmentDefaultName: "Segment {index}",
+		trackSegmentDuration: "Duration",
+		trackSegmentDistance: "Distance",
+		trackSegmentPointCount: "Points",
 	},
 } as const;
 

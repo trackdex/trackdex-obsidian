@@ -66,5 +66,10 @@ export const ru: MessagesSchema = {
 		trackMapTilesOffline:
 			"Тайлы карты недоступны. Показана только геометрия маршрута.",
 		trackMapNoGeometry: "Для этого трека нет геометрии маршрута.",
+		trackSegmentListTitle: "Сегменты",
+		trackSegmentDefaultName: "Сегмент {index}",
+		trackSegmentDuration: "Длительность",
+		trackSegmentDistance: "Дистанция",
+		trackSegmentPointCount: "Точки",
 	},
 };

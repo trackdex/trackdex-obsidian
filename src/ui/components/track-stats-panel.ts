@@ -3,6 +3,7 @@ import type {TrackRecord} from "../../domain/track/track-record";
 import type {TrackStatus} from "../../domain/track/track-status";
 import {t} from "../i18n";
 import type {TranslationKey} from "../i18n/locales/en";
+import {renderTrackSegmentList} from "./track-segment-list";
 import {
 	formatCadenceRpm,
 	formatDistanceM,
@@ -148,6 +149,7 @@ export function renderTrackStatsPanel(
 	const statusEl = root.createDiv({cls: "trackdex-track-stats-panel__status"});
 	const messageEl = root.createDiv({cls: "trackdex-track-stats-panel__message"});
 	const rowsEl = root.createDiv({cls: "trackdex-track-stats-panel__rows"});
+	const segmentListEl = root.createDiv({cls: "trackdex-track-segment-list-host"});
 
 	let refreshGeneration = 0;
 
@@ -174,6 +176,7 @@ export function renderTrackStatsPanel(
 		messageEl.empty();
 		statusEl.empty();
 		rowsEl.empty();
+		renderTrackSegmentList(segmentListEl, null);
 
 		if (record === null) {
 			titleEl.setText(t("views.trackStatsTitle"));
@@ -198,6 +201,7 @@ export function renderTrackStatsPanel(
 
 		if (METRICS_VISIBLE_STATUSES.has(record.status)) {
 			renderRows(buildMetricRows(record));
+			renderTrackSegmentList(segmentListEl, record.segments);
 		}
 	};
 
@@ -221,6 +225,7 @@ export function renderTrackStatsPanel(
 			}
 			messageEl.setText(t("views.trackStatsLoadError"));
 			rowsEl.empty();
+			renderTrackSegmentList(segmentListEl, null);
 		}
 	};
 

@@ -212,6 +212,77 @@
 	text-align: right;
 }
 
+.trackdex-track-segment-list-host {
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+}
+
+.trackdex-track-segment-list {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	padding-top: 0.75rem;
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+.trackdex-track-segment-list__title {
+	font-size: var(--font-ui-small);
+	font-weight: var(--font-semibold);
+	line-height: 1.35;
+	margin: 0;
+}
+
+.trackdex-track-segment-list__items {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.trackdex-track-segment-list__item {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+	padding: 0.5rem 0.6rem;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	background: var(--background-secondary);
+}
+
+.trackdex-track-segment-list__name {
+	color: var(--text-normal);
+	font-size: var(--font-ui-small);
+	font-weight: var(--font-medium);
+	line-height: 1.35;
+}
+
+.trackdex-track-segment-list__metrics {
+	display: flex;
+	flex-direction: column;
+	gap: 0.2rem;
+}
+
+.trackdex-track-segment-list__metric {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+	gap: 0.5rem;
+	align-items: baseline;
+}
+
+.trackdex-track-segment-list__metric-label {
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+	line-height: 1.4;
+}
+
+.trackdex-track-segment-list__metric-value {
+	color: var(--text-normal);
+	font-size: var(--font-ui-smaller);
+	font-variant-numeric: tabular-nums;
+	line-height: 1.4;
+	text-align: right;
+}
+
 .trackdex-track-view__mobile-tabs {
 	display: none;
 	flex-shrink: 0;

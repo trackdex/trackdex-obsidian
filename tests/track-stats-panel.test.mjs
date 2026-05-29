@@ -24,6 +24,7 @@ test("track stats panel loads indexed metrics via findTrackByPath", () => {
 	assert.match(trackView, /refreshStatsPanel/);
 	assert.match(panel, /findTrackByPath/);
 	assert.match(panel, /buildMetricRows/);
+	assert.match(panel, /renderTrackSegmentList/);
 	assert.match(format, /MISSING_STATS_VALUE = "—"/);
 	assert.doesNotMatch(panel, /parseGpxTrackPoints/);
 });
