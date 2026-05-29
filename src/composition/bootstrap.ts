@@ -1,4 +1,5 @@
 import {Editor, MarkdownView, Notice} from "obsidian";
+import {registerTrackdexCommands} from "../infrastructure/obsidian/commands-registry";
 import {TrackdexOverviewModal} from "../ui/components/trackdex-overview-modal";
 import {t} from "../ui/i18n";
 import {TrackdexSettingTab} from "../ui/settings/settings-tab";
@@ -12,6 +13,7 @@ export async function bootstrapTrackdexPlugin(
 	_container: TrackdexContainer,
 ): Promise<void> {
 	registerTrackView(plugin);
+	registerTrackdexCommands(plugin);
 
 	plugin.addRibbonIcon("map", "Trackdex", () => {
 		new Notice("Trackdex: open track catalog (coming soon)");
