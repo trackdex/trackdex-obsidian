@@ -8,6 +8,7 @@ export {
 	isFitTrackFileName,
 	matchTrackFileExtensionFromName,
 } from "domain/track/track-file-name";
+export { normalizeTrackFileExtension } from "domain/track/track-file-extension";
 export type { TrackDataFlags } from "domain/track/track-data-flags";
 export type { NewTrackRecord, TrackPath, TrackRecord } from "domain/track/track-record";
 export type { TrackSegment } from "domain/track/track-segment";

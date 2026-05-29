@@ -18,7 +18,7 @@ import { createRotatingFileLoggerHandle } from "../infrastructure/logging";
 import { createNoopMetricsPort } from "../infrastructure/logging/noop-metrics-port";
 import { createSystemClockPort } from "../infrastructure/logging/system-clock-port";
 import { createObsidianVaultScanner } from "../infrastructure/obsidian/vault-scanner";
-import { createNoopTrackParserPort } from "../infrastructure/parsers/noop-track-parser-port";
+import { createDefaultParserRouter } from "../infrastructure/parsers/parser-router";
 import {
 	SqlStorageAdapter,
 	createSqlIndexMetaRepository,
@@ -78,7 +78,7 @@ export async function createTrackdexContainer(
 	const flushLogger = (): Promise<void> => loggerHandle.flush();
 	const clock = createSystemClockPort();
 	const metrics = createNoopMetricsPort();
-	const trackParser = createNoopTrackParserPort();
+	const trackParser = createDefaultParserRouter();
 
 	let tracks: TrackRepository = createNoopTrackRepository();
 	let places: PlaceRepository = createNoopPlaceRepository();

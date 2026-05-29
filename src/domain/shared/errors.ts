@@ -1,6 +1,7 @@
 /** Stable error codes for domain and port boundaries. */
 export type DomainErrorCode =
 	| "parse_failed"
+	| "unsupported_extension"
 	| "invalid_geometry"
 	| "not_found"
 	| "storage_error"

@@ -6,3 +6,8 @@ export {
 	type GpxLatLng,
 	type ParseGpxTrackResult,
 } from "./gpx-parser";
+export {
+	createDefaultParserRouter,
+	createParserRouter,
+	type ParserRouterDeps,
+} from "./parser-router";
