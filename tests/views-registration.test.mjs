@@ -45,10 +45,14 @@ test("views: track view shell layout for file-open", () => {
 		join(ROOT, "src/ui/views/track-view.ts"),
 		"utf8",
 	);
-	assert.match(trackView, /trackdex-track-view__layout/);
-	assert.match(trackView, /trackdex-track-view__map-column/);
-	assert.match(trackView, /trackdex-track-view__stats-placeholder/);
+	assert.match(trackView, /buildTrackViewLayout/);
+	assert.match(trackView, /scheduleMapResize/);
 	assert.match(trackView, /getTrackFileExtension/);
+	const layout = readFileSync(
+		join(ROOT, "src/ui/views/track-view-layout.ts"),
+		"utf8",
+	);
+	assert.match(layout, /trackdex-track-view__stats-column/);
 });
 
 test("views: tracks sidebar shows interrupted-run banner wiring", () => {

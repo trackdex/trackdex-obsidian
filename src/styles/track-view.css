@@ -103,29 +103,32 @@
 	min-height: 0;
 }
 
+/* Desktop (>=769px): map ~60% left, stats ~40% right — see track-view-layout.ts */
 .trackdex-track-view__map-column {
 	display: flex;
-	flex: 1 1 58%;
+	flex: 1 1 60%;
 	flex-direction: column;
 	min-height: 0;
 	min-width: 0;
 }
 
-.trackdex-track-view__mobile-hint {
-	display: none;
-	flex-shrink: 0;
-	margin-bottom: 0.35rem;
-	color: var(--text-faint);
-	font-size: var(--font-ui-smaller);
+.trackdex-track-view__stats-column {
+	display: flex;
+	flex: 0 0 40%;
+	flex-direction: column;
+	min-height: 0;
+	min-width: 12rem;
+	max-width: 40%;
 }
 
 .trackdex-track-view__stats-placeholder {
 	display: flex;
-	flex: 0 0 38%;
+	flex: 1 1 auto;
 	flex-direction: column;
 	align-items: flex-start;
 	justify-content: flex-start;
-	min-width: 10rem;
+	min-height: 0;
+	overflow-y: auto;
 	padding: 0.75rem;
 	border: 1px dashed var(--background-modifier-border);
 	border-radius: var(--radius-m);
@@ -134,7 +137,65 @@
 	line-height: 1.5;
 }
 
+.trackdex-track-view__mobile-tabs {
+	display: none;
+	flex-shrink: 0;
+	gap: 0.5rem;
+	margin-bottom: 0.5rem;
+}
+
+.trackdex-track-view__mobile-tab {
+	flex: 1 1 50%;
+	min-height: 2.75rem;
+	padding: 0.5rem 0.75rem;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	background: var(--background-secondary);
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	font-weight: var(--font-medium);
+	line-height: 1.35;
+	cursor: pointer;
+	touch-action: manipulation;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.trackdex-track-view__mobile-tab:hover {
+	color: var(--text-normal);
+	border-color: var(--background-modifier-border-hover);
+}
+
+.trackdex-track-view__mobile-tab:focus-visible {
+	outline: 2px solid var(--interactive-accent);
+	outline-offset: 2px;
+}
+
+.trackdex-track-view__mobile-tab--active {
+	background: var(--interactive-accent);
+	border-color: var(--interactive-accent);
+	color: var(--text-on-accent);
+}
+
+@media (min-width: 769px) {
+	.trackdex-track-view__layout {
+		flex-direction: row;
+	}
+
+	.trackdex-track-view__map-column {
+		flex: 1 1 60%;
+	}
+
+	.trackdex-track-view__stats-column {
+		flex: 0 0 40%;
+		max-width: 40%;
+	}
+}
+
 @media (max-width: 768px) {
+	.trackdex-track-view__mobile-tabs {
+		display: flex;
+	}
+
 	.trackdex-track-view__layout {
 		flex-direction: column;
 	}
@@ -143,13 +204,19 @@
 		flex: 1 1 auto;
 	}
 
-	.trackdex-track-view__stats-placeholder {
-		flex: 0 0 auto;
+	.trackdex-track-view__stats-column {
+		flex: 1 1 auto;
+		max-width: none;
 		width: 100%;
+		min-height: 0;
 	}
 
-	.trackdex-track-view__mobile-hint {
-		display: block;
+	.trackdex-track-view__layout--tab-map .trackdex-track-view__stats-column {
+		display: none;
+	}
+
+	.trackdex-track-view__layout--tab-stats .trackdex-track-view__map-column {
+		display: none;
 	}
 }
 
