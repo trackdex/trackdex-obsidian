@@ -35,12 +35,3 @@ test("spike config: ENABLE_STORAGE_SCHEMA_SMOKE is false in committed builds", (
 	);
 });
 
-test("spike config: ENABLE_FIT_PARSER_SPIKE is false in committed builds", () => {
-	assert.equal(
-		readSpikeFlag(
-			"src/infrastructure/parsers/candidates/spike-config.ts",
-			"ENABLE_FIT_PARSER_SPIKE",
-		),
-		false,
-	);
-});

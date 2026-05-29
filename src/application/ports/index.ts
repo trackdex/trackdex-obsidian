@@ -11,6 +11,10 @@ export type {
 	VaultScannerPort,
 } from "application/ports/vault-scanner-port";
 export type {
+	VaultTrackFileContent,
+	VaultTrackFilePort,
+} from "application/ports/vault-track-file-port";
+export type {
 	VaultTrackEvent,
 	VaultTrackEventHandlerPort,
 } from "application/ports/vault-track-event-handler-port";

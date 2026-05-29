@@ -1,5 +1,5 @@
 /**
- * Decompress `.fit.gz` payload to raw FIT bytes (spike + tests).
+ * Decompress `.fit.gz` payload to raw FIT bytes.
  * Uses `DecompressionStream` (Node 18+ / Obsidian desktop & mobile WebViews).
  */
 export async function gunzipFit(bytes: Uint8Array): Promise<Uint8Array> {

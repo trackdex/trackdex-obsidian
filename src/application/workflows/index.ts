@@ -16,3 +16,8 @@ export {
 	handleVaultTrackEvent,
 	type RunIncrementalIndexDeps,
 } from "./incremental-index";
+export {
+	createIndexTrackFileJob,
+	indexTrackFile,
+	type IndexTrackFileDeps,
+} from "./index-track-file";

@@ -8,7 +8,9 @@ export {
 	isFitTrackFileName,
 	matchTrackFileExtensionFromName,
 } from "domain/track/track-file-name";
+export { normalizeTrackFileExtension } from "domain/track/track-file-extension";
 export type { TrackDataFlags } from "domain/track/track-data-flags";
+export { deriveTrackDataFlags } from "domain/track/derive-track-data-flags";
 export type { NewTrackRecord, TrackPath, TrackRecord } from "domain/track/track-record";
 export type { TrackSegment } from "domain/track/track-segment";
 export type { TrackStatus } from "domain/track/track-status";
@@ -39,3 +41,30 @@ export type {
 } from "domain/track/track-query";
 export type { TimezoneSource } from "domain/track/timezone-source";
 export { TIMEZONE_SOURCES } from "domain/track/timezone-source";
+export type {
+	NormalizedTimestamp,
+	NormalizedTrackTimes,
+	TimeNormalizationContext,
+} from "domain/track/time-normalization";
+export {
+	normalizeTimestamp,
+	normalizeTrackTimes,
+} from "domain/track/time-normalization";
+export type { ComputedTrackMetrics } from "domain/track/track-metrics";
+export {
+	ELEVATION_GAIN_LOSS_THRESHOLD_M,
+	computeTrackMetrics,
+	haversineDistanceM,
+} from "domain/track/track-metrics";
+export type { AggregatedTrackCatalogData } from "domain/track/segment-aggregation";
+export { aggregateParsedTrackForCatalog } from "domain/track/segment-aggregation";
+export type { TrackMapGeometry } from "domain/track/polyline-simplify";
+export {
+	POLYLINE_SIMPLIFY_TOLERANCE_M,
+	computeTrackBbox,
+	computeTrackMapGeometry,
+	isBboxValidForMapFit,
+	simplifyTrackPolyline,
+	stringifyPolylineSimplifiedJson,
+	stringifyTrackBboxJson,
+} from "domain/track/polyline-simplify";

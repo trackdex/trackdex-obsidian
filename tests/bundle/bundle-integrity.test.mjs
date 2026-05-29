@@ -132,12 +132,11 @@ const FORBIDDEN_SPIKE_COMMAND_IDS = [
 ];
 
 const FORBIDDEN_SPIKE_REQUIRES = [
-	"fit-file-parser",
 	"@garmin-fit/sdk",
 	"@garmin/fit/sdk",
 ];
 
-test("bundle integrity: production main.js excludes spike commands and parser deps", () => {
+test("bundle integrity: production main.js excludes spike commands and garmin SDK", () => {
 	const mainJs = readFileSync(MAIN_JS, "utf8");
 	const commandIds = FORBIDDEN_SPIKE_COMMAND_IDS.filter((id) =>
 		mainJs.includes(id),
@@ -152,5 +151,23 @@ test("bundle integrity: production main.js excludes spike commands and parser de
 		found.length
 			? `Production main.js must not include spike artifacts (set spike flags to false and rebuild):\n${found.join("\n")}`
 			: undefined,
+	);
+});
+
+function productionBundleIncludesFitParser(mainJs) {
+	if (/fit-file-parser|FitParser/.test(mainJs)) {
+		return true;
+	}
+	// Production builds minify away module identifiers; parseAsync + force option
+	// remain stable signatures of the fit-file-parser adapter.
+	return mainJs.includes("parseAsync") && /force:!0|force:true/.test(mainJs);
+}
+
+test("bundle integrity: production main.js bundles fit-file-parser", () => {
+	const mainJs = readFileSync(MAIN_JS, "utf8");
+	assert.equal(
+		productionBundleIncludesFitParser(mainJs),
+		true,
+		"main.js should include fit-file-parser after 0.4-04 wiring (direct import or minified parseAsync usage)",
 	);
 });
